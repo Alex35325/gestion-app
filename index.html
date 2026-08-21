@@ -513,12 +513,45 @@ function visibleNavItems() {
   return state.navPrefs.filter(function (p) { return p.visible; }).map(function (p) { return navItemById(p.id); });
 }
 
+/* ================= Dashboard preferences (per-device, localStorage) ================= */
+var DASHBOARD_PREFS_KEY = "gestionapp.dashboardPrefs";
+var DEFAULT_DASHBOARD_KPIS = ["revenus", "depenses", "benefice", "marge"];
+var KPI_CATALOG = [
+  { id: "revenus", label: "Revenus (période)" },
+  { id: "depenses", label: "Dépenses (période)" },
+  { id: "benefice", label: "Bénéfice net (période)" },
+  { id: "marge", label: "Marge (période)" },
+  { id: "nbClients", label: "Nombre de clients" },
+  { id: "nbVehicules", label: "Nombre de véhicules" },
+  { id: "nbInventaire", label: "Articles en inventaire" },
+  { id: "stockBas", label: "Articles en stock bas" },
+  { id: "nbRevenus", label: "Nombre de revenus (période)" },
+  { id: "nbDepenses", label: "Nombre de dépenses (période)" }
+];
+
+function loadDashboardPrefs() {
+  var saved = null;
+  try { var raw = localStorage.getItem(DASHBOARD_PREFS_KEY); saved = raw ? JSON.parse(raw) : null; } catch (e) { saved = null; }
+  var validIds = KPI_CATALOG.map(function (k) { return k.id; });
+  var kpis = saved && Array.isArray(saved.kpis) ? saved.kpis.filter(function (id) { return validIds.indexOf(id) !== -1; }) : [];
+  while (kpis.length < 4) kpis.push(DEFAULT_DASHBOARD_KPIS[kpis.length] || validIds[0]);
+  kpis = kpis.slice(0, 4);
+  return {
+    kpis: kpis,
+    showChart: saved && typeof saved.showChart === "boolean" ? saved.showChart : true,
+    showActivity: saved && typeof saved.showActivity === "boolean" ? saved.showActivity : true
+  };
+}
+function saveDashboardPrefs() {
+  try { localStorage.setItem(DASHBOARD_PREFS_KEY, JSON.stringify(state.dashboardPrefs)); } catch (e) {}
+}
+
 /* ================= State ================= */
 var state = {
   clients: [], revenus: [], depenses: [], vehicules: [], inventaire: [], settings: DEFAULT_SETTINGS,
   activeView: "dashboard", sidebarCollapsed: false, mobileNavOpen: false,
   dashboardPeriod: "mois", rentabiliteType: "vehicule", rentabiliteVehiculeId: null, rentabiliteProduitId: null,
-  navPrefs: loadNavPrefs()
+  navPrefs: loadNavPrefs(), dashboardPrefs: loadDashboardPrefs()
 };
 
 async function init() {
@@ -838,6 +871,30 @@ function renderDashboard() {
     return '<p class="kpi-change ' + (positive ? "positive" : "negative") + '">' + icon(positive ? "arrowUpRight" : "arrowDownRight", 13) + Math.abs(pct).toFixed(0) + '% vs mois dernier</p>';
   }
 
+  var stockBasCount = state.inventaire.filter(function (i) {
+    return i.minThreshold !== "" && i.minThreshold != null && Number(i.quantity) <= Number(i.minThreshold);
+  }).length;
+
+  var kpiData = {
+    revenus: { value: formatCurrency(totalRevenus, state.settings.currency), extra: kpiChangeHtml(revChange) },
+    depenses: { value: formatCurrency(totalDepenses, state.settings.currency), extra: kpiChangeHtml(depChange) },
+    benefice: { value: formatCurrency(benefice, state.settings.currency), danger: benefice < 0 },
+    marge: { value: marge.toFixed(1) + "%" },
+    nbClients: { value: String(state.clients.length) },
+    nbVehicules: { value: String(state.vehicules.length) },
+    nbInventaire: { value: String(state.inventaire.length) },
+    stockBas: { value: String(stockBasCount), danger: stockBasCount > 0 },
+    nbRevenus: { value: String(filteredRevenus.length) },
+    nbDepenses: { value: String(filteredDepenses.length) }
+  };
+
+  var kpiHtml = state.dashboardPrefs.kpis.map(function (kpiId) {
+    var cat = KPI_CATALOG.find(function (k) { return k.id === kpiId; });
+    var data = kpiData[kpiId];
+    if (!cat || !data) return "";
+    return '<div class="card"><p class="kpi-label">' + esc(cat.label) + '</p><p class="kpi-value' + (data.danger ? " danger" : "") + '">' + data.value + '</p>' + (data.extra || "") + '</div>';
+  }).join("");
+
   var recentActivity = state.revenus.map(function (r) { return Object.assign({}, r, { kind: "revenu" }); })
     .concat(state.depenses.map(function (d) { return Object.assign({}, d, { kind: "depense" }); }))
     .sort(function (a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
@@ -852,22 +909,23 @@ function renderDashboard() {
           '<span class="activity-amount ' + (item.kind === "revenu" ? "pos" : "neg") + '">' + (item.kind === "revenu" ? "+" : "−") + formatCurrency(item.montant, state.settings.currency) + '</span></li>';
       }).join("") + '</ul>';
 
+  var showChart = state.dashboardPrefs.showChart, showActivity = state.dashboardPrefs.showActivity;
+  var dashGridHtml = "";
+  if (showChart || showActivity) {
+    dashGridHtml = '<div class="dash-grid"' + (!showChart || !showActivity ? ' style="grid-template-columns:1fr;"' : "") + '">' +
+      (showChart ? '<div class="card"><p class="card-title">Revenus vs dépenses — 6 derniers mois</p>' + buildChartSVG() +
+        '<div class="chart-legend"><span><span class="legend-dot" style="background:var(--accent)"></span>Revenus</span><span><span class="legend-dot" style="background:var(--danger)"></span>Dépenses</span></div></div>' : "") +
+      (showActivity ? '<div class="card"><p class="card-title">Activité récente</p>' + activityHtml + '</div>' : "") +
+    '</div>';
+  }
+
   return (
     '<div class="view-header"><div><h1 class="view-title">Tableau de bord</h1><p class="view-subtitle">Vue d\'ensemble de ' + esc(state.settings.companyName) + '</p></div>' +
     '<div class="period-toggle">' + periods.map(function (p) {
       return '<button class="period-btn ' + (state.dashboardPeriod === p.id ? "active" : "") + '" data-action="set-period" data-period="' + p.id + '">' + p.label + '</button>';
     }).join("") + '</div></div>' +
-    '<div class="kpi-grid">' +
-      '<div class="card"><p class="kpi-label">Revenus</p><p class="kpi-value">' + formatCurrency(totalRevenus, state.settings.currency) + '</p>' + kpiChangeHtml(revChange) + '</div>' +
-      '<div class="card"><p class="kpi-label">Dépenses</p><p class="kpi-value">' + formatCurrency(totalDepenses, state.settings.currency) + '</p>' + kpiChangeHtml(depChange) + '</div>' +
-      '<div class="card"><p class="kpi-label">Bénéfice net</p><p class="kpi-value' + (benefice < 0 ? " danger" : "") + '">' + formatCurrency(benefice, state.settings.currency) + '</p></div>' +
-      '<div class="card"><p class="kpi-label">Marge</p><p class="kpi-value">' + marge.toFixed(1) + '%</p></div>' +
-    '</div>' +
-    '<div class="dash-grid">' +
-      '<div class="card"><p class="card-title">Revenus vs dépenses — 6 derniers mois</p>' + buildChartSVG() +
-        '<div class="chart-legend"><span><span class="legend-dot" style="background:var(--accent)"></span>Revenus</span><span><span class="legend-dot" style="background:var(--danger)"></span>Dépenses</span></div></div>' +
-      '<div class="card"><p class="card-title">Activité récente</p>' + activityHtml + '</div>' +
-    '</div>'
+    '<div class="kpi-grid">' + kpiHtml + '</div>' +
+    dashGridHtml
   );
 }
 
@@ -1053,6 +1111,19 @@ function renderDepenses() {
     '<tbody id="depenses-tbody">' + rows + '</tbody></table><p class="no-results" id="depenses-no-results" style="display:none">Aucune dépense ne correspond à la recherche.</p></div>';
 }
 
+function renderDashboardPrefsSection() {
+  var kpiSelects = state.dashboardPrefs.kpis.map(function (kpiId, idx) {
+    var options = KPI_CATALOG.map(function (k) { return '<option value="' + k.id + '"' + (k.id === kpiId ? " selected" : "") + '>' + esc(k.label) + '</option>'; }).join("");
+    return '<label class="field"><span class="field-label">Case ' + (idx + 1) + '</span><select data-action="set-dashboard-kpi" data-index="' + idx + '">' + options + '</select></label>';
+  }).join("");
+  return '<div class="card" style="margin-top:16px;"><p class="card-title" style="margin-bottom:2px;">Personnaliser le tableau de bord</p>' +
+    '<p class="demo-note">Choisissez ce qu\'affiche chaque case, et si le graphique et l\'activité récente apparaissent. Propre à cet appareil.</p>' +
+    '<div class="field-row" style="margin-top:12px;">' + kpiSelects + '</div>' +
+    '<label class="nav-pref-row" style="margin-top:4px;"><input type="checkbox" data-action="toggle-dashboard-chart"' + (state.dashboardPrefs.showChart ? " checked" : "") + '><span class="nav-pref-label">Afficher le graphique revenus / dépenses</span></label>' +
+    '<label class="nav-pref-row" style="margin-top:6px;"><input type="checkbox" data-action="toggle-dashboard-activity"' + (state.dashboardPrefs.showActivity ? " checked" : "") + '><span class="nav-pref-label">Afficher l\'activité récente</span></label>' +
+  '</div>';
+}
+
 function renderNavPrefsSection() {
   var rows = state.navPrefs.map(function (p, idx) {
     var item = navItemById(p.id);
@@ -1084,6 +1155,7 @@ function renderParametres() {
       '</select></label>' +
       '<button type="submit" class="btn btn-primary">Enregistrer</button>' +
     '</form>' +
+    renderDashboardPrefsSection() +
     renderNavPrefsSection() +
     '<div class="card" style="margin-top:16px;"><p class="card-title" style="margin-bottom:2px;">Données de démonstration</p>' +
       '<p class="demo-note">Les données sont partagées : toute personne ayant ce lien voit et modifie les mêmes clients, revenus et dépenses.</p>' +
@@ -1135,7 +1207,7 @@ function render() {
   if (state.activeView === "vehicules") wireSearch("vehicule-search-input", "vehicules-tbody", "[data-vehicule-row]", "vehicules-no-results");
   if (state.activeView === "inventaire") wireSearch("inventaire-search-input", "inventaire-tbody", "[data-inventaire-row]", "inventaire-no-results");
   if (state.activeView === "rentabilite") wireRentabiliteSelect();
-  if (state.activeView === "parametres") wireSettingsForm();
+  if (state.activeView === "parametres") { wireSettingsForm(); wireDashboardPrefsSelects(); }
 }
 
 function wireSearch(inputId, tbodyId, rowSelector, noResultsId) {
@@ -1161,6 +1233,15 @@ function wireSettingsForm() {
     e.preventDefault();
     var fd = new FormData(form);
     saveSettings({ companyName: (fd.get("companyName") || "").trim() || "Mon entreprise", currency: fd.get("currency") });
+  });
+}
+function wireDashboardPrefsSelects() {
+  document.querySelectorAll('[data-action="set-dashboard-kpi"]').forEach(function (sel) {
+    sel.addEventListener("change", function () {
+      var idx = Number(sel.getAttribute("data-index"));
+      state.dashboardPrefs.kpis[idx] = sel.value;
+      saveDashboardPrefs(); render();
+    });
   });
 }
 function wireRentabiliteSelect() {
@@ -1425,6 +1506,14 @@ document.addEventListener("click", function (e) {
       state.navPrefs = loadNavPrefs();
       render();
       showToast("success", "Menu réinitialisé.");
+      break;
+    case "toggle-dashboard-chart":
+      state.dashboardPrefs.showChart = !state.dashboardPrefs.showChart;
+      saveDashboardPrefs(); render();
+      break;
+    case "toggle-dashboard-activity":
+      state.dashboardPrefs.showActivity = !state.dashboardPrefs.showActivity;
+      saveDashboardPrefs(); render();
       break;
   }
 });
