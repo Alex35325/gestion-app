@@ -50,6 +50,23 @@ create table if not exists public.vehicules (
 alter table public.revenus add column if not exists vehicule_id text references public.vehicules(id) on delete set null;
 alter table public.depenses add column if not exists vehicule_id text references public.vehicules(id) on delete set null;
 
+-- Extra identification fields on vehicules (Info véhicule).
+alter table public.vehicules add column if not exists vin text not null default '';
+alter table public.vehicules add column if not exists color text not null default '';
+alter table public.vehicules add column if not exists mileage numeric;
+alter table public.vehicules add column if not exists purchase_date date;
+
+create table if not exists public.maintenances (
+  id text primary key,
+  vehicule_id text not null references public.vehicules(id) on delete cascade,
+  type text not null default 'Autre',
+  date date,
+  next_due_date date,
+  notes text not null default '',
+  created_at bigint not null,
+  updated_at bigint not null
+);
+
 create table if not exists public.inventaire (
   id text primary key,
   name text not null,
@@ -86,6 +103,7 @@ alter table public.revenus enable row level security;
 alter table public.depenses enable row level security;
 alter table public.vehicules enable row level security;
 alter table public.inventaire enable row level security;
+alter table public.maintenances enable row level security;
 alter table public.settings enable row level security;
 
 drop policy if exists "public access" on public.clients;
@@ -103,7 +121,10 @@ create policy "public access" on public.vehicules for all using (true) with chec
 drop policy if exists "public access" on public.inventaire;
 create policy "public access" on public.inventaire for all using (true) with check (true);
 
+drop policy if exists "public access" on public.maintenances;
+create policy "public access" on public.maintenances for all using (true) with check (true);
+
 drop policy if exists "public access" on public.settings;
 create policy "public access" on public.settings for all using (true) with check (true);
 
-grant all on public.clients, public.revenus, public.depenses, public.vehicules, public.inventaire, public.settings to anon, authenticated;
+grant all on public.clients, public.revenus, public.depenses, public.vehicules, public.inventaire, public.maintenances, public.settings to anon, authenticated;

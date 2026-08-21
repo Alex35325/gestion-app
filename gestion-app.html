@@ -24,6 +24,8 @@
     --overlay: rgba(15, 23, 42, 0.44);
     --shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.18), 0 4px 12px -4px rgba(15, 23, 42, 0.10);
     --focus-ring: rgba(5, 150, 105, 0.35);
+    --warning: #d97706;
+    --warning-soft: #fffbeb;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -47,6 +49,8 @@
       --overlay: rgba(0, 0, 0, 0.6);
       --shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.55), 0 4px 12px -4px rgba(0, 0, 0, 0.4);
       --focus-ring: rgba(16, 185, 129, 0.35);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.14);
     }
   }
 
@@ -70,6 +74,8 @@
     --overlay: rgba(0, 0, 0, 0.6);
     --shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.55), 0 4px 12px -4px rgba(0, 0, 0, 0.4);
     --focus-ring: rgba(16, 185, 129, 0.35);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.14);
   }
 
   * { box-sizing: border-box; }
@@ -250,11 +256,12 @@
   .col-sm { display: none; } .col-md { display: none; }
   @media (min-width: 640px) { .col-sm { display: table-cell; } }
   @media (min-width: 768px) { .col-md { display: table-cell; } }
-  tr.row-hidden { display: none; }
+  .row-hidden { display: none; }
 
   .badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
   .badge-green { background: var(--accent-soft); color: var(--accent-soft-text); }
   .badge-red { background: var(--danger-soft); color: var(--danger-soft-text); }
+  .badge-amber { background: var(--warning-soft); color: var(--warning); }
 
   /* ---------- Empty state ---------- */
   .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 56px 20px; border: 1px dashed var(--border); border-radius: 12px; }
@@ -312,6 +319,23 @@
   .nav-pref-label { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13.5px; min-width: 0; }
   .nav-pref-locked { color: var(--text-muted); font-size: 11px; }
   .nav-pref-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+  .nav-pref-child { margin-left: 26px; margin-top: 6px; padding: 6px 10px; }
+
+  /* ---------- Nested nav groups ---------- */
+  .nav-group-row { display: flex; align-items: center; gap: 2px; }
+  .nav-group-row .nav-btn { flex: 1; min-width: 0; }
+  .nav-group-toggle { border: none; background: transparent; color: var(--text-muted); padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0; }
+  .nav-group-toggle:hover { background: var(--border-subtle); color: var(--text-secondary); }
+  .nav-btn.nav-btn-child { padding-left: 34px; font-size: 12.5px; }
+
+  /* ---------- Nav customize popover ---------- */
+  .nav-popover-backdrop { position: fixed; inset: 0; z-index: 90; }
+  .nav-popover { position: fixed; top: 68px; left: 248px; width: 320px; max-height: 75vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); z-index: 95; padding: 14px; }
+  @media (max-width: 860px) { .nav-popover { left: 12px; right: 12px; width: auto; top: 64px; } }
+
+  /* ---------- Vehicule info cards ---------- */
+  .vehicule-id-grid { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px 14px; font-size: 12.5px; color: var(--text); }
+  .vehicule-id-label { display: block; color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 1px; }
 </style>
 
 <div id="app-root"></div>
@@ -325,14 +349,22 @@
 /* ================= Constants ================= */
 var REVENUE_CATEGORIES = ["Vente", "Service", "Abonnement", "Autre"];
 var EXPENSE_CATEGORIES = ["Loyer", "Fournitures", "Salaires", "Marketing", "Logiciels", "Autre"];
+var MAINTENANCE_TYPES = ["Vidange d'huile", "Freins", "Pneus", "Inspection", "Révision", "Batterie", "Autre"];
 var DEFAULT_SETTINGS = { companyName: "Mon entreprise", currency: "CAD" };
+/* Flat list; a "parent" field nests an item as a sub-tab under another
+   top-level item (only one level deep). Top-level items (no parent) are
+   what the customize popover can hide/reorder; children can only be
+   individually shown/hidden — they stay grouped under their parent. */
 var NAV_ITEMS = [
   { id: "dashboard", label: "Tableau de bord", icon: "dashboard" },
   { id: "clients", label: "Clients", icon: "users" },
-  { id: "revenus", label: "Revenus", icon: "trendUp" },
-  { id: "depenses", label: "Dépenses", icon: "trendDown" },
   { id: "vehicules", label: "Véhicules", icon: "car" },
+  { id: "vehicules-revenus", label: "Revenus", icon: "trendUp", parent: "vehicules" },
+  { id: "vehicules-depenses", label: "Dépenses", icon: "trendDown", parent: "vehicules" },
+  { id: "vehicules-info", label: "Info véhicule", icon: "car", parent: "vehicules" },
+  { id: "vehicules-maintenance", label: "Maintenance", icon: "wrench", parent: "vehicules" },
   { id: "inventaire", label: "Inventaire", icon: "box" },
+  { id: "inventaire-depenses", label: "Dépenses", icon: "trendDown", parent: "inventaire" },
   { id: "rentabilite", label: "Rentabilité", icon: "chart" },
   { id: "parametres", label: "Paramètres", icon: "settings" }
 ];
@@ -366,7 +398,8 @@ function icon(name, size) {
     arrowUpRight: '<line x1="6" y1="18" x2="18" y2="6"/><polyline points="9,6 18,6 18,15"/>',
     arrowDownRight: '<line x1="6" y1="6" x2="18" y2="18"/><polyline points="18,9 18,18 9,18"/>',
     building: '<rect x="4" y="3" width="12" height="18" rx="1"/><path d="M16 9h4v12h-4"/><line x1="7.5" y1="7" x2="7.5" y2="7.01"/><line x1="12.5" y1="7" x2="12.5" y2="7.01"/><line x1="7.5" y1="11" x2="7.5" y2="11.01"/><line x1="12.5" y1="11" x2="12.5" y2="11.01"/><line x1="7.5" y1="15" x2="7.5" y2="15.01"/><line x1="12.5" y1="15" x2="12.5" y2="15.01"/>',
-    rotate: '<path d="M4 12a8 8 0 1 1 2.6 5.9"/><polyline points="4,17 4,12 9,12"/>'
+    rotate: '<path d="M4 12a8 8 0 1 1 2.6 5.9"/><polyline points="4,17 4,12 9,12"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 4.6L4.5 15.7a1.5 1.5 0 0 0 0 2.1l1.7 1.7a1.5 1.5 0 0 0 2.1 0l4.8-4.8a4 4 0 0 0 4.6-5.4l-2.55 2.55-2.1-2.1Z"/>'
   }[name] || "";
   var strokeIcons = { building: false };
   var isDotIcon = name === "building";
@@ -470,8 +503,19 @@ function revenuToDb(r) { return { id: r.id, date: r.date, client_id: r.clientId 
 function revenuFromDb(r) { return { id: r.id, date: r.date, clientId: r.client_id, vehiculeId: r.vehicule_id, produitId: r.produit_id, montant: Number(r.montant), categorie: r.categorie, description: r.description, createdAt: r.created_at, updatedAt: r.updated_at }; }
 function depenseToDb(d) { return { id: d.id, date: d.date, vehicule_id: d.vehiculeId || null, produit_id: d.produitId || null, montant: d.montant, categorie: d.categorie, description: d.description || "", created_at: d.createdAt, updated_at: d.updatedAt }; }
 function depenseFromDb(d) { return { id: d.id, date: d.date, vehiculeId: d.vehicule_id, produitId: d.produit_id, montant: Number(d.montant), categorie: d.categorie, description: d.description, createdAt: d.created_at, updatedAt: d.updated_at }; }
-function vehiculeToDb(v) { return { id: v.id, name: v.name, make: v.make || "", model: v.model || "", year: v.year || "", plate: v.plate || "", notes: v.notes || "", created_at: v.createdAt, updated_at: v.updatedAt }; }
-function vehiculeFromDb(v) { return { id: v.id, name: v.name, make: v.make, model: v.model, year: v.year, plate: v.plate, notes: v.notes, createdAt: v.created_at, updatedAt: v.updated_at }; }
+function vehiculeToDb(v) { return { id: v.id, name: v.name, make: v.make || "", model: v.model || "", year: v.year || "", plate: v.plate || "", vin: v.vin || "", color: v.color || "", mileage: v.mileage === "" || v.mileage == null ? null : v.mileage, purchase_date: v.purchaseDate || null, notes: v.notes || "", created_at: v.createdAt, updated_at: v.updatedAt }; }
+function vehiculeFromDb(v) { return { id: v.id, name: v.name, make: v.make, model: v.model, year: v.year, plate: v.plate, vin: v.vin || "", color: v.color || "", mileage: v.mileage === null || v.mileage === undefined ? "" : Number(v.mileage), purchaseDate: v.purchase_date, notes: v.notes, createdAt: v.created_at, updatedAt: v.updated_at }; }
+function maintenanceToDb(m) { return { id: m.id, vehicule_id: m.vehiculeId, type: m.type, date: m.date || null, next_due_date: m.nextDueDate || null, notes: m.notes || "", created_at: m.createdAt, updated_at: m.updatedAt }; }
+function maintenanceFromDb(m) { return { id: m.id, vehiculeId: m.vehicule_id, type: m.type, date: m.date, nextDueDate: m.next_due_date, notes: m.notes, createdAt: m.created_at, updatedAt: m.updated_at }; }
+function maintenanceStatus(m) {
+  if (!m.nextDueDate) return "ok";
+  var due = new Date(m.nextDueDate + "T00:00:00");
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var diffDays = Math.floor((due - today) / 86400000);
+  if (diffDays < 0) return "late";
+  if (diffDays <= 30) return "soon";
+  return "ok";
+}
 function inventaireToDb(i) { return { id: i.id, name: i.name, quantity: i.quantity, unit: i.unit || "", category: i.category || "", min_threshold: i.minThreshold === "" || i.minThreshold == null ? null : i.minThreshold, notes: i.notes || "", created_at: i.createdAt, updated_at: i.updatedAt }; }
 function inventaireFromDb(i) { return { id: i.id, name: i.name, quantity: Number(i.quantity), unit: i.unit, category: i.category, minThreshold: i.min_threshold === null ? "" : Number(i.min_threshold), notes: i.notes, createdAt: i.created_at, updatedAt: i.updated_at }; }
 
@@ -481,12 +525,15 @@ function inventaireFromDb(i) { return { id: i.id, name: i.name, quantity: Number
 var NAV_PREFS_KEY = "gestionapp.navPrefs";
 var LOCKED_NAV_IDS = ["dashboard", "parametres"];
 
+function topLevelNavItems() { return NAV_ITEMS.filter(function (n) { return !n.parent; }); }
+function childrenOf(parentId) { return NAV_ITEMS.filter(function (n) { return n.parent === parentId; }); }
+
 function loadNavPrefs() {
   var saved = null;
   try { var raw = localStorage.getItem(NAV_PREFS_KEY); saved = raw ? JSON.parse(raw) : null; } catch (e) { saved = null; }
   var byId = {};
   (saved || []).forEach(function (p) { byId[p.id] = p; });
-  var validIds = NAV_ITEMS.map(function (n) { return n.id; });
+  var validIds = topLevelNavItems().map(function (n) { return n.id; });
   var ordered = [];
   if (saved) { saved.forEach(function (p) { if (validIds.indexOf(p.id) !== -1) ordered.push(p.id); }); }
   validIds.forEach(function (id) { if (ordered.indexOf(id) === -1) ordered.push(id); });
@@ -501,8 +548,28 @@ function saveNavPrefs() {
   try { localStorage.setItem(NAV_PREFS_KEY, JSON.stringify(state.navPrefs)); } catch (e) {}
 }
 function navItemById(id) { return NAV_ITEMS.find(function (n) { return n.id === id; }); }
-function visibleNavItems() {
-  return state.navPrefs.filter(function (p) { return p.visible; }).map(function (p) { return navItemById(p.id); });
+
+var NAV_CHILD_VIS_KEY = "gestionapp.navChildVisible";
+function loadNavChildVisibility() {
+  var saved = null;
+  try { var raw = localStorage.getItem(NAV_CHILD_VIS_KEY); saved = raw ? JSON.parse(raw) : null; } catch (e) { saved = null; }
+  var map = {};
+  NAV_ITEMS.filter(function (n) { return n.parent; }).forEach(function (n) {
+    map[n.id] = saved && typeof saved[n.id] === "boolean" ? saved[n.id] : true;
+  });
+  return map;
+}
+function saveNavChildVisibility() {
+  try { localStorage.setItem(NAV_CHILD_VIS_KEY, JSON.stringify(state.navChildVisible)); } catch (e) {}
+}
+
+/* Top-level items in customized order/visibility, each with its visible children. */
+function visibleNavTree() {
+  return state.navPrefs.filter(function (p) { return p.visible; }).map(function (p) {
+    var item = navItemById(p.id);
+    var kids = childrenOf(p.id).filter(function (c) { return state.navChildVisible[c.id] !== false; });
+    return { item: item, children: kids };
+  });
 }
 
 /* ================= Dashboard preferences (per-device, localStorage) ================= */
@@ -518,7 +585,12 @@ var KPI_CATALOG = [
   { id: "nbInventaire", label: "Articles en inventaire" },
   { id: "stockBas", label: "Articles en stock bas" },
   { id: "nbRevenus", label: "Nombre de revenus (période)" },
-  { id: "nbDepenses", label: "Nombre de dépenses (période)" }
+  { id: "nbDepenses", label: "Nombre de dépenses (période)" },
+  { id: "vehRevenus", label: "Revenus véhicules (période)" },
+  { id: "vehDepenses", label: "Dépenses véhicules (période)" },
+  { id: "invDepenses", label: "Dépenses inventaire (période)" },
+  { id: "maintenanceLate", label: "Maintenances en retard" },
+  { id: "maintenanceSoon", label: "Maintenances à surveiller" }
 ];
 
 function loadDashboardPrefs() {
@@ -540,10 +612,11 @@ function saveDashboardPrefs() {
 
 /* ================= State ================= */
 var state = {
-  clients: [], revenus: [], depenses: [], vehicules: [], inventaire: [], settings: DEFAULT_SETTINGS,
+  clients: [], revenus: [], depenses: [], vehicules: [], inventaire: [], maintenances: [], settings: DEFAULT_SETTINGS,
   activeView: "dashboard", sidebarCollapsed: false, mobileNavOpen: false,
   dashboardPeriod: "mois", rentabiliteType: "vehicule", rentabiliteVehiculeId: null, rentabiliteProduitId: null,
-  navPrefs: loadNavPrefs(), dashboardPrefs: loadDashboardPrefs()
+  navPrefs: loadNavPrefs(), dashboardPrefs: loadDashboardPrefs(),
+  navChildVisible: loadNavChildVisibility(), navExpanded: {}, navPopoverOpen: false
 };
 
 async function init() {
@@ -581,6 +654,9 @@ async function init() {
   try {
     state.inventaire = (await sbGet("inventaire", "select=*&order=created_at.asc")).map(inventaireFromDb);
   } catch (e) { console.error(e); state.inventaire = []; }
+  try {
+    state.maintenances = (await sbGet("maintenances", "select=*&order=next_due_date.asc.nullslast")).map(maintenanceFromDb);
+  } catch (e) { console.error(e); state.maintenances = []; }
 
   render();
 }
@@ -630,15 +706,18 @@ function closeModal() { document.getElementById("modal-layer").innerHTML = ""; }
 
 document.addEventListener("click", function (e) {
   var closeTarget = e.target.closest("[data-close]");
-  if (closeTarget && (closeTarget === e.target || closeTarget.classList.contains("overlay-backdrop"))) {
-    if (e.target === closeTarget) {
-      var kind = closeTarget.getAttribute("data-close");
-      if (kind === "modal") closeModal(); else closeConfirm();
-    }
+  if (closeTarget && closeTarget === e.target) {
+    var kind = closeTarget.getAttribute("data-close");
+    if (kind === "modal") closeModal();
+    else if (kind === "nav-popover") { state.navPopoverOpen = false; render(); }
+    else closeConfirm();
   }
 });
 document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") { closeModal(); closeConfirm(); }
+  if (e.key === "Escape") {
+    closeModal(); closeConfirm();
+    if (state.navPopoverOpen) { state.navPopoverOpen = false; render(); }
+  }
 });
 
 /* ================= CRUD =================
@@ -687,6 +766,28 @@ function deleteVehicule(vehicule) {
     closeConfirm(); render();
     try { await sbDelete("vehicules", vehicule.id); showToast("success", "Véhicule supprimé."); }
     catch (e) { state.vehicules = prev; render(); showToast("error", "La suppression a échoué. Réessayez."); }
+  });
+}
+
+async function saveMaintenance(data, id) {
+  var prev = state.maintenances;
+  var row = id
+    ? Object.assign({}, state.maintenances.find(function (m) { return m.id === id; }), data, { updatedAt: Date.now() })
+    : Object.assign({ id: uid(), createdAt: Date.now(), updatedAt: Date.now() }, data);
+  state.maintenances = id ? state.maintenances.map(function (m) { return m.id === id ? row : m; }) : state.maintenances.concat([row]);
+  closeModal(); render();
+  try {
+    if (id) await sbUpdate("maintenances", id, maintenanceToDb(row)); else await sbInsert("maintenances", maintenanceToDb(row));
+    showToast("success", id ? "Maintenance mise à jour." : "Maintenance ajoutée.");
+  } catch (e) { state.maintenances = prev; render(); showToast("error", "L'enregistrement a échoué. Réessayez."); }
+}
+function deleteMaintenance(item) {
+  openConfirm("Supprimer cette entrée de maintenance ? Cette action est irréversible.", async function () {
+    var prev = state.maintenances;
+    state.maintenances = state.maintenances.filter(function (m) { return m.id !== item.id; });
+    closeConfirm(); render();
+    try { await sbDelete("maintenances", item.id); showToast("success", "Maintenance supprimée."); }
+    catch (e) { state.maintenances = prev; render(); showToast("error", "La suppression a échoué. Réessayez."); }
   });
 }
 
@@ -794,7 +895,12 @@ function clearAllData() {
 }
 
 /* ================= Navigation ================= */
-function navigate(view) { state.activeView = view; state.mobileNavOpen = false; render(); }
+function navigate(view) {
+  if (view === "vehicules") view = "vehicules-info";
+  state.activeView = view;
+  state.mobileNavOpen = false;
+  render();
+}
 
 /* ================= Chart ================= */
 function buildChartSVG() {
@@ -867,6 +973,12 @@ function renderDashboard() {
     return i.minThreshold !== "" && i.minThreshold != null && Number(i.quantity) <= Number(i.minThreshold);
   }).length;
 
+  var maintLate = 0, maintSoon = 0;
+  state.maintenances.forEach(function (m) {
+    var st = maintenanceStatus(m);
+    if (st === "late") maintLate++; else if (st === "soon") maintSoon++;
+  });
+
   var kpiData = {
     revenus: { value: formatCurrency(totalRevenus, state.settings.currency), extra: kpiChangeHtml(revChange) },
     depenses: { value: formatCurrency(totalDepenses, state.settings.currency), extra: kpiChangeHtml(depChange) },
@@ -877,7 +989,12 @@ function renderDashboard() {
     nbInventaire: { value: String(state.inventaire.length) },
     stockBas: { value: String(stockBasCount), danger: stockBasCount > 0 },
     nbRevenus: { value: String(filteredRevenus.length) },
-    nbDepenses: { value: String(filteredDepenses.length) }
+    nbDepenses: { value: String(filteredDepenses.length) },
+    vehRevenus: { value: formatCurrency(sumMontant(filteredRevenus.filter(function (r) { return !!r.vehiculeId; })), state.settings.currency) },
+    vehDepenses: { value: formatCurrency(sumMontant(filteredDepenses.filter(function (d) { return !!d.vehiculeId; })), state.settings.currency) },
+    invDepenses: { value: formatCurrency(sumMontant(filteredDepenses.filter(function (d) { return !!d.produitId; })), state.settings.currency) },
+    maintenanceLate: { value: String(maintLate), danger: maintLate > 0 },
+    maintenanceSoon: { value: String(maintSoon) }
   };
 
   var kpiHtml = state.dashboardPrefs.kpis.map(function (kpiId) {
@@ -943,28 +1060,92 @@ function renderClients() {
     '<tbody id="clients-tbody">' + rows + '</tbody></table><p class="no-results" id="clients-no-results" style="display:none">Aucun client ne correspond à la recherche.</p></div>';
 }
 
-function renderVehicules() {
+function renderVehiculesInfo() {
   var addBtn = '<button class="btn btn-primary" data-action="open-vehicule-modal">' + icon("plus", 16) + 'Ajouter un véhicule</button>';
-  var header = '<div class="view-header"><div><h1 class="view-title">Véhicules</h1><p class="view-subtitle">Votre flotte de véhicules</p></div>' + addBtn + '</div>' +
-    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="vehicule-search-input" placeholder="Rechercher par nom, marque, modèle ou plaque…" autocomplete="off"></div>';
+  var header = '<div class="view-header"><div><h1 class="view-title">Info véhicule</h1><p class="view-subtitle">Identification et suivi de votre flotte</p></div>' + addBtn + '</div>' +
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="vehicule-search-input" placeholder="Rechercher par nom, marque, modèle, VIN ou plaque…" autocomplete="off"></div>';
 
   if (state.vehicules.length === 0) {
     return header + '<div class="empty-state"><div class="empty-icon">' + icon("car", 20) + '</div><p class="empty-title">Aucun véhicule</p><p class="empty-subtitle">Ajoutez votre premier véhicule pour commencer.</p>' +
       '<button class="btn btn-primary" style="margin-top:14px" data-action="open-vehicule-modal">' + icon("plus", 16) + 'Ajouter un véhicule</button></div>';
   }
 
-  var rows = state.vehicules.map(function (v) {
-    var searchStr = [v.name, v.make, v.model, v.year, v.plate].join(" ").toLowerCase();
+  var cards = state.vehicules.map(function (v) {
+    var searchStr = [v.name, v.make, v.model, v.year, v.plate, v.vin, v.color].join(" ").toLowerCase();
+    var mineVehicule = state.maintenances.filter(function (m) { return m.vehiculeId === v.id; });
+    var late = 0, soon = 0;
+    mineVehicule.forEach(function (m) { var st = maintenanceStatus(m); if (st === "late") late++; else if (st === "soon") soon++; });
+    var statusChips = "";
+    if (late > 0) statusChips += '<span class="badge badge-red">' + late + ' en retard</span>';
+    if (soon > 0) statusChips += '<span class="badge badge-amber">' + soon + ' à surveiller</span>';
+    if (late === 0 && soon === 0 && mineVehicule.length > 0) statusChips += '<span class="badge badge-green">Maintenance à jour</span>';
     var makeModel = [v.make, v.model].filter(Boolean).join(" ") || "—";
-    return '<tr data-vehicule-row data-search="' + esc(searchStr) + '"><td style="font-weight:600;">' + esc(v.name) + '</td>' +
-      '<td class="col-sm" style="color:var(--text-secondary)">' + esc(makeModel) + (v.year ? " (" + esc(v.year) + ")" : "") + '</td>' +
-      '<td class="col-md" style="color:var(--text-secondary)">' + esc(v.plate || "—") + '</td>' +
-      '<td class="actions"><button class="icon-btn" data-action="edit-vehicule" data-id="' + v.id + '" aria-label="Modifier">' + icon("pencil", 15) + '</button>' +
-      '<button class="icon-btn danger" data-action="delete-vehicule" data-id="' + v.id + '" aria-label="Supprimer">' + icon("trash", 15) + '</button></td></tr>';
+    return '<div class="card" data-vehicule-card data-search="' + esc(searchStr) + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+        '<div style="min-width:0;"><p style="font-weight:700;font-size:15px;">' + esc(v.name) + '</p>' +
+        '<p style="color:var(--text-secondary);font-size:12.5px;margin-top:2px;">' + esc(makeModel) + (v.year ? " · " + esc(v.year) : "") + '</p></div>' +
+        '<div style="display:flex;gap:2px;flex-shrink:0;"><button class="icon-btn" data-action="edit-vehicule" data-id="' + v.id + '" aria-label="Modifier">' + icon("pencil", 15) + '</button>' +
+        '<button class="icon-btn danger" data-action="delete-vehicule" data-id="' + v.id + '" aria-label="Supprimer">' + icon("trash", 15) + '</button></div>' +
+      '</div>' +
+      '<div class="vehicule-id-grid">' +
+        '<div><span class="vehicule-id-label">Plaque</span>' + esc(v.plate || "—") + '</div>' +
+        '<div><span class="vehicule-id-label">VIN</span>' + esc(v.vin || "—") + '</div>' +
+        '<div><span class="vehicule-id-label">Couleur</span>' + esc(v.color || "—") + '</div>' +
+        '<div><span class="vehicule-id-label">Kilométrage</span>' + (v.mileage !== "" && v.mileage != null ? Number(v.mileage).toLocaleString("fr-CA") + " km" : "—") + '</div>' +
+        '<div><span class="vehicule-id-label">Date d\'achat</span>' + (v.purchaseDate ? formatDate(v.purchaseDate) : "—") + '</div>' +
+      '</div>' +
+      (statusChips ? '<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">' + statusChips + '</div>' : "") +
+    '</div>';
   }).join("");
 
-  return header + '<div class="table-card"><table><thead><tr><th>Nom</th><th class="col-sm">Marque / modèle</th><th class="col-md">Plaque</th><th></th></tr></thead>' +
-    '<tbody id="vehicules-tbody">' + rows + '</tbody></table><p class="no-results" id="vehicules-no-results" style="display:none">Aucun véhicule ne correspond à la recherche.</p></div>';
+  return header + '<div id="vehicules-info-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:14px;">' + cards + '</div>' +
+    '<p class="no-results" id="vehicules-no-results" style="display:none">Aucun véhicule ne correspond à la recherche.</p>';
+}
+
+function renderMaintenance() {
+  var addBtn = '<button class="btn btn-primary" data-action="open-maintenance-modal">' + icon("plus", 16) + 'Ajouter une maintenance</button>';
+  var header = '<div class="view-header"><div><h1 class="view-title">Maintenance</h1><p class="view-subtitle">Entretien de vos véhicules</p></div>' + addBtn + '</div>';
+
+  if (state.vehicules.length === 0) {
+    return header + '<div class="empty-state"><div class="empty-icon">' + icon("wrench", 20) + '</div><p class="empty-title">Aucun véhicule</p><p class="empty-subtitle">Ajoutez d\'abord un véhicule dans Info véhicule.</p></div>';
+  }
+
+  var late = 0, soon = 0, ok = 0;
+  state.maintenances.forEach(function (m) { var st = maintenanceStatus(m); if (st === "late") late++; else if (st === "soon") soon++; else ok++; });
+  var summary = '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(140px,1fr));margin-bottom:16px;">' +
+    '<div class="card"><p class="kpi-label">En retard</p><p class="kpi-value' + (late > 0 ? " danger" : "") + '">' + late + '</p></div>' +
+    '<div class="card"><p class="kpi-label">À surveiller</p><p class="kpi-value">' + soon + '</p></div>' +
+    '<div class="card"><p class="kpi-label">À jour</p><p class="kpi-value">' + ok + '</p></div>' +
+  '</div>';
+
+  if (state.maintenances.length === 0) {
+    return header + summary + '<div class="empty-state"><div class="empty-icon">' + icon("wrench", 20) + '</div><p class="empty-title">Aucune maintenance enregistrée</p><p class="empty-subtitle">Ajoutez la première entrée de maintenance.</p>' +
+      '<button class="btn btn-primary" style="margin-top:14px" data-action="open-maintenance-modal">' + icon("plus", 16) + 'Ajouter une maintenance</button></div>';
+  }
+
+  function vehiculeName(id) { var v = state.vehicules.find(function (x) { return x.id === id; }); return v ? v.name : "—"; }
+  var sorted = state.maintenances.slice().sort(function (a, b) {
+    var da = a.nextDueDate ? new Date(a.nextDueDate) : new Date(8640000000000000);
+    var db = b.nextDueDate ? new Date(b.nextDueDate) : new Date(8640000000000000);
+    return da - db;
+  });
+  var rows = sorted.map(function (m) {
+    var st = maintenanceStatus(m);
+    var searchStr = [vehiculeName(m.vehiculeId), m.type, m.date || "", m.nextDueDate || ""].join(" ").toLowerCase();
+    var statusBadge = st === "late" ? '<span class="badge badge-red">En retard</span>' : st === "soon" ? '<span class="badge badge-amber">À surveiller</span>' : '<span class="badge badge-green">À jour</span>';
+    return '<tr data-row data-search="' + esc(searchStr) + '"><td style="font-weight:600;">' + esc(vehiculeName(m.vehiculeId)) + '</td>' +
+      '<td class="col-sm">' + esc(m.type) + '</td>' +
+      '<td class="col-md" style="color:var(--text-secondary)">' + (m.date ? formatDate(m.date) : "—") + '</td>' +
+      '<td style="color:var(--text-secondary)">' + (m.nextDueDate ? formatDate(m.nextDueDate) : "—") + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td class="actions"><button class="icon-btn" data-action="edit-maintenance" data-id="' + m.id + '" aria-label="Modifier">' + icon("pencil", 15) + '</button>' +
+      '<button class="icon-btn danger" data-action="delete-maintenance" data-id="' + m.id + '" aria-label="Supprimer">' + icon("trash", 15) + '</button></td></tr>';
+  }).join("");
+
+  return header + summary +
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="maintenance-search-input" placeholder="Rechercher par véhicule ou type…" autocomplete="off"></div>' +
+    '<div class="table-card"><table><thead><tr><th>Véhicule</th><th class="col-sm">Type</th><th class="col-md">Date</th><th>Prochaine échéance</th><th>Statut</th><th></th></tr></thead>' +
+    '<tbody id="maintenance-tbody">' + rows + '</tbody></table><p class="no-results" id="maintenance-no-results" style="display:none">Aucune maintenance ne correspond à la recherche.</p></div>';
 }
 
 function renderInventaire() {
@@ -1049,23 +1230,23 @@ function renderRentabilite() {
     '<div style="margin-top:16px;">' + listHtml + '</div>';
 }
 
-function renderRevenus() {
-  var total = sumMontant(state.revenus);
-  var header = '<div class="view-header"><div><h1 class="view-title">Revenus</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
+function renderRevenusTableGeneric(list, o) {
+  var total = sumMontant(list);
+  var header = '<div class="view-header"><div><h1 class="view-title">' + esc(o.title) + '</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
     '<button class="btn btn-primary" data-action="open-revenu-modal">' + icon("plus", 16) + 'Ajouter un revenu</button></div>' +
-    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="revenu-search-input" placeholder="Rechercher par client, courriel ou téléphone…" autocomplete="off"></div>';
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="' + o.searchId + '" placeholder="Rechercher par client, courriel ou téléphone…" autocomplete="off"></div>';
 
-  if (state.revenus.length === 0) {
-    return header + '<div class="empty-state"><div class="empty-icon">' + icon("trendUp", 20) + '</div><p class="empty-title">Aucun revenu enregistré</p><p class="empty-subtitle">Ajoutez votre première entrée de revenu.</p>' +
+  if (list.length === 0) {
+    return header + '<div class="empty-state"><div class="empty-icon">' + icon("trendUp", 20) + '</div><p class="empty-title">' + esc(o.emptyTitle) + '</p><p class="empty-subtitle">' + esc(o.emptySubtitle) + '</p>' +
       '<button class="btn btn-primary" style="margin-top:14px" data-action="open-revenu-modal">' + icon("plus", 16) + 'Ajouter un revenu</button></div>';
   }
 
   function findClient(id) { return state.clients.find(function (x) { return x.id === id; }); }
-  var sorted = state.revenus.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  var sorted = list.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   var rows = sorted.map(function (r) {
     var c = findClient(r.clientId);
     var searchStr = [c ? c.name : "", c ? c.email : "", c ? c.phone : ""].join(" ").toLowerCase();
-    return '<tr data-revenu-row data-search="' + esc(searchStr) + '"><td style="color:var(--text-secondary)">' + formatDate(r.date) + '</td>' +
+    return '<tr data-row data-search="' + esc(searchStr) + '"><td style="color:var(--text-secondary)">' + formatDate(r.date) + '</td>' +
       '<td class="col-sm" style="color:var(--text-secondary)">' + esc(c ? c.name : "—") + '</td>' +
       '<td class="col-md"><span class="badge badge-green">' + esc(r.categorie) + '</span></td>' +
       '<td class="num pos">' + formatCurrency(r.montant, state.settings.currency) + '</td>' +
@@ -1074,24 +1255,24 @@ function renderRevenus() {
   }).join("");
 
   return header + '<div class="table-card"><table><thead><tr><th>Date</th><th class="col-sm">Client</th><th class="col-md">Catégorie</th><th>Montant</th><th></th></tr></thead>' +
-    '<tbody id="revenus-tbody">' + rows + '</tbody></table><p class="no-results" id="revenus-no-results" style="display:none">Aucun revenu ne correspond à la recherche.</p></div>';
+    '<tbody id="' + o.tbodyId + '">' + rows + '</tbody></table><p class="no-results" id="' + o.noResultsId + '" style="display:none">Aucun revenu ne correspond à la recherche.</p></div>';
 }
 
-function renderDepenses() {
-  var total = sumMontant(state.depenses);
-  var header = '<div class="view-header"><div><h1 class="view-title">Dépenses</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
+function renderDepensesTableGeneric(list, o) {
+  var total = sumMontant(list);
+  var header = '<div class="view-header"><div><h1 class="view-title">' + esc(o.title) + '</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
     '<button class="btn btn-primary" data-action="open-depense-modal">' + icon("plus", 16) + 'Ajouter une dépense</button></div>' +
-    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="depense-search-input" placeholder="Rechercher par date, catégorie ou montant…" autocomplete="off"></div>';
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="' + o.searchId + '" placeholder="Rechercher par date, catégorie ou montant…" autocomplete="off"></div>';
 
-  if (state.depenses.length === 0) {
-    return header + '<div class="empty-state"><div class="empty-icon">' + icon("trendDown", 20) + '</div><p class="empty-title">Aucune dépense enregistrée</p><p class="empty-subtitle">Ajoutez votre première dépense.</p>' +
+  if (list.length === 0) {
+    return header + '<div class="empty-state"><div class="empty-icon">' + icon("trendDown", 20) + '</div><p class="empty-title">' + esc(o.emptyTitle) + '</p><p class="empty-subtitle">' + esc(o.emptySubtitle) + '</p>' +
       '<button class="btn btn-primary" style="margin-top:14px" data-action="open-depense-modal">' + icon("plus", 16) + 'Ajouter une dépense</button></div>';
   }
 
-  var sorted = state.depenses.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  var sorted = list.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   var rows = sorted.map(function (d) {
     var searchStr = [formatDate(d.date), d.date, d.categorie, String(d.montant), formatCurrency(d.montant, state.settings.currency), d.description || ""].join(" ").toLowerCase();
-    return '<tr data-depense-row data-search="' + esc(searchStr) + '"><td style="color:var(--text-secondary)">' + formatDate(d.date) + '</td>' +
+    return '<tr data-row data-search="' + esc(searchStr) + '"><td style="color:var(--text-secondary)">' + formatDate(d.date) + '</td>' +
       '<td class="col-sm"><span class="badge badge-red">' + esc(d.categorie) + '</span></td>' +
       '<td class="col-md" style="color:var(--text-secondary)">' + esc(d.description || "—") + '</td>' +
       '<td class="num neg">' + formatCurrency(d.montant, state.settings.currency) + '</td>' +
@@ -1100,7 +1281,29 @@ function renderDepenses() {
   }).join("");
 
   return header + '<div class="table-card"><table><thead><tr><th>Date</th><th class="col-sm">Catégorie</th><th class="col-md">Description</th><th>Montant</th><th></th></tr></thead>' +
-    '<tbody id="depenses-tbody">' + rows + '</tbody></table><p class="no-results" id="depenses-no-results" style="display:none">Aucune dépense ne correspond à la recherche.</p></div>';
+    '<tbody id="' + o.tbodyId + '">' + rows + '</tbody></table><p class="no-results" id="' + o.noResultsId + '" style="display:none">Aucune dépense ne correspond à la recherche.</p></div>';
+}
+
+function renderVehiculesRevenus() {
+  var list = state.revenus.filter(function (r) { return !!r.vehiculeId; });
+  return renderRevenusTableGeneric(list, {
+    title: "Revenus — Véhicules", searchId: "veh-rev-search-input", tbodyId: "veh-rev-tbody", noResultsId: "veh-rev-no-results",
+    emptyTitle: "Aucun revenu lié à un véhicule", emptySubtitle: "Ajoutez un revenu et sélectionnez un véhicule dans son formulaire."
+  });
+}
+function renderVehiculesDepenses() {
+  var list = state.depenses.filter(function (d) { return !!d.vehiculeId; });
+  return renderDepensesTableGeneric(list, {
+    title: "Dépenses — Véhicules", searchId: "veh-dep-search-input", tbodyId: "veh-dep-tbody", noResultsId: "veh-dep-no-results",
+    emptyTitle: "Aucune dépense liée à un véhicule", emptySubtitle: "Ajoutez une dépense et sélectionnez un véhicule dans son formulaire."
+  });
+}
+function renderInventaireDepenses() {
+  var list = state.depenses.filter(function (d) { return !!d.produitId; });
+  return renderDepensesTableGeneric(list, {
+    title: "Dépenses — Inventaire", searchId: "inv-dep-search-input", tbodyId: "inv-dep-tbody", noResultsId: "inv-dep-no-results",
+    emptyTitle: "Aucune dépense liée à un produit", emptySubtitle: "Ajoutez une dépense et sélectionnez un produit dans son formulaire."
+  });
 }
 
 function renderDashboardPrefsSection() {
@@ -1116,22 +1319,27 @@ function renderDashboardPrefsSection() {
   '</div>';
 }
 
-function renderNavPrefsSection() {
+function renderNavPopoverContent() {
   var rows = state.navPrefs.map(function (p, idx) {
     var item = navItemById(p.id);
     var locked = LOCKED_NAV_IDS.indexOf(p.id) !== -1;
+    var kids = childrenOf(p.id).map(function (c) {
+      var vis = state.navChildVisible[c.id] !== false;
+      return '<div class="nav-pref-row nav-pref-child"><input type="checkbox" data-action="toggle-nav-child-visible" data-id="' + c.id + '"' + (vis ? " checked" : "") + ' aria-label="Afficher ' + esc(c.label) + '">' +
+        '<span class="nav-pref-label">' + icon(c.icon, 15) + esc(c.label) + '</span></div>';
+    }).join("");
     return '<div class="nav-pref-row">' +
       '<input type="checkbox" data-action="toggle-nav-visible" data-id="' + p.id + '"' + (p.visible ? " checked" : "") + (locked ? " disabled" : "") + ' aria-label="Afficher ' + esc(item.label) + '">' +
       '<span class="nav-pref-label">' + icon(item.icon, 16) + esc(item.label) + (locked ? ' <span class="nav-pref-locked">(toujours visible)</span>' : "") + '</span>' +
       '<button class="icon-btn" data-action="move-nav-up" data-id="' + p.id + '" aria-label="Monter"' + (idx === 0 ? " disabled" : "") + '>' + icon("chevronUp", 15) + '</button>' +
       '<button class="icon-btn" data-action="move-nav-down" data-id="' + p.id + '" aria-label="Descendre"' + (idx === state.navPrefs.length - 1 ? " disabled" : "") + '>' + icon("chevronDown", 15) + '</button>' +
-    '</div>';
+    '</div>' + kids;
   }).join("");
-  return '<div class="card" style="margin-top:16px;"><p class="card-title" style="margin-bottom:2px;">Personnaliser le menu</p>' +
-    '<p class="demo-note">Activez, désactivez ou réordonnez les onglets du menu (haut/bas). Propre à cet appareil.</p>' +
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;"><p class="card-title" style="margin-bottom:0;">Personnaliser le menu</p>' +
+    '<button class="icon-btn" data-close="nav-popover" aria-label="Fermer">' + icon("x", 16) + '</button></div>' +
+    '<p class="demo-note">Activez, désactivez ou réordonnez les onglets. Propre à cet appareil.</p>' +
     '<div style="margin-top:12px;">' + rows + '</div>' +
-    '<button class="btn btn-ghost" style="margin-top:10px;padding-left:0;" data-action="reset-nav-prefs">' + icon("rotate", 14) + ' Réinitialiser le menu</button>' +
-  '</div>';
+    '<button class="btn btn-ghost" style="margin-top:10px;padding-left:0;" data-action="reset-nav-prefs">' + icon("rotate", 14) + ' Réinitialiser le menu</button>';
 }
 
 function renderParametres() {
@@ -1148,7 +1356,6 @@ function renderParametres() {
       '<button type="submit" class="btn btn-primary">Enregistrer</button>' +
     '</form>' +
     renderDashboardPrefsSection() +
-    renderNavPrefsSection() +
     '<div class="card" style="margin-top:16px;"><p class="card-title" style="margin-bottom:2px;">Données de démonstration</p>' +
       '<p class="demo-note">Les données sont partagées : toute personne ayant ce lien voit et modifie les mêmes clients, revenus et dépenses.</p>' +
       '<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">' +
@@ -1160,22 +1367,37 @@ function renderParametres() {
 
 /* ================= Shell render ================= */
 function navHtml(collapsed) {
-  return visibleNavItems().map(function (item) {
-    var active = state.activeView === item.id;
-    return '<button class="nav-btn' + (active ? " active" : "") + '" data-action="nav" data-view="' + item.id + '" title="' + esc(item.label) + '">' +
+  return visibleNavTree().map(function (node) {
+    var item = node.item, active = state.activeView === item.id;
+    var mainBtn = '<button class="nav-btn' + (active ? " active" : "") + '" data-action="nav" data-view="' + item.id + '" title="' + esc(item.label) + '">' +
       icon(item.icon, 18) + (collapsed ? "" : '<span>' + item.label + '</span>') + '</button>';
+    if (collapsed || node.children.length === 0) return mainBtn;
+    var isChildActive = node.children.some(function (c) { return c.id === state.activeView; });
+    var expanded = !!state.navExpanded[item.id] || isChildActive;
+    var chevron = '<button class="nav-group-toggle" data-action="toggle-nav-group" data-id="' + item.id + '" aria-label="' + (expanded ? "Réduire" : "Déplier") + '">' + icon(expanded ? "chevronUp" : "chevronDown", 14) + '</button>';
+    var kidsHtml = expanded ? node.children.map(function (c) {
+      var cActive = state.activeView === c.id;
+      return '<button class="nav-btn nav-btn-child' + (cActive ? " active" : "") + '" data-action="nav" data-view="' + c.id + '" title="' + esc(c.label) + '">' + icon(c.icon, 15) + '<span>' + c.label + '</span></button>';
+    }).join("") : "";
+    return '<div class="nav-group-row">' + mainBtn + chevron + '</div>' + kidsHtml;
   }).join("");
 }
 
 function render() {
   var root = document.getElementById("app-root");
-  var viewFns = { dashboard: renderDashboard, clients: renderClients, revenus: renderRevenus, depenses: renderDepenses, vehicules: renderVehicules, inventaire: renderInventaire, rentabilite: renderRentabilite, parametres: renderParametres };
+  var viewFns = {
+    dashboard: renderDashboard, clients: renderClients,
+    "vehicules-revenus": renderVehiculesRevenus, "vehicules-depenses": renderVehiculesDepenses,
+    "vehicules-info": renderVehiculesInfo, "vehicules-maintenance": renderMaintenance,
+    inventaire: renderInventaire, "inventaire-depenses": renderInventaireDepenses,
+    rentabilite: renderRentabilite, parametres: renderParametres
+  };
   var viewLabel = NAV_ITEMS.filter(function (n) { return n.id === state.activeView; })[0].label;
 
   root.innerHTML =
     '<aside class="sidebar' + (state.sidebarCollapsed ? " collapsed" : "") + '">' +
       '<div class="sidebar-brand"><div class="brand-badge">' + icon("building", 16) + '</div>' +
-      (state.sidebarCollapsed ? "" : '<span class="brand-name">' + esc(state.settings.companyName) + '</span>') + '</div>' +
+      (state.sidebarCollapsed ? "" : '<span class="brand-name">' + esc(state.settings.companyName) + '</span><button class="icon-btn" data-action="toggle-nav-popover" aria-label="Personnaliser le menu" style="margin-left:auto;">' + icon("menu", 16) + '</button>') + '</div>' +
       '<nav class="sidebar-nav">' + navHtml(state.sidebarCollapsed) + '</nav>' +
       '<button class="sidebar-collapse-btn" data-action="toggle-sidebar">' +
         (state.sidebarCollapsed ? icon("chevronRight", 15) : icon("chevronLeft", 15) + '<span>Réduire</span>') + '</button>' +
@@ -1184,34 +1406,38 @@ function render() {
       '<div class="mobile-nav-backdrop" data-action="close-mobile-nav"></div>' +
       '<div class="mobile-nav-panel"><div class="sidebar-brand" style="justify-content:space-between;border-bottom:1px solid var(--border-subtle);">' +
         '<span class="brand-name">' + esc(state.settings.companyName) + '</span>' +
-        '<button class="icon-btn" data-action="close-mobile-nav" aria-label="Fermer">' + icon("x", 18) + '</button></div>' +
+        '<div style="display:flex;gap:2px;"><button class="icon-btn" data-action="toggle-nav-popover" aria-label="Personnaliser le menu">' + icon("menu", 17) + '</button>' +
+        '<button class="icon-btn" data-action="close-mobile-nav" aria-label="Fermer">' + icon("x", 18) + '</button></div></div>' +
         '<nav class="sidebar-nav">' + navHtml(false) + '</nav></div>' +
     '</div>' +
+    (state.navPopoverOpen ? '<div class="nav-popover-backdrop" data-close="nav-popover"></div><div class="nav-popover">' + renderNavPopoverContent() + '</div>' : "") +
     '<div class="main-col">' +
       '<div class="mobile-topbar"><button data-action="open-mobile-nav" aria-label="Menu">' + icon("menu", 21) + '</button>' +
         '<span class="title">' + esc(viewLabel) + '</span><span style="width:21px"></span></div>' +
       '<main class="main-content">' + viewFns[state.activeView]() + '</main>' +
     '</div>';
 
-  if (state.activeView === "clients") wireSearch("client-search-input", "clients-tbody", "[data-client-row]", "clients-no-results");
-  if (state.activeView === "revenus") wireSearch("revenu-search-input", "revenus-tbody", "[data-revenu-row]", "revenus-no-results");
-  if (state.activeView === "depenses") wireSearch("depense-search-input", "depenses-tbody", "[data-depense-row]", "depenses-no-results");
-  if (state.activeView === "vehicules") wireSearch("vehicule-search-input", "vehicules-tbody", "[data-vehicule-row]", "vehicules-no-results");
-  if (state.activeView === "inventaire") wireSearch("inventaire-search-input", "inventaire-tbody", "[data-inventaire-row]", "inventaire-no-results");
+  if (state.activeView === "clients") wireSearch("client-search-input", "clients-tbody", "tr[data-client-row]", "clients-no-results");
+  if (state.activeView === "vehicules-revenus") wireSearch("veh-rev-search-input", "veh-rev-tbody", "tr[data-row]", "veh-rev-no-results");
+  if (state.activeView === "vehicules-depenses") wireSearch("veh-dep-search-input", "veh-dep-tbody", "tr[data-row]", "veh-dep-no-results");
+  if (state.activeView === "vehicules-info") wireSearch("vehicule-search-input", "vehicules-info-grid", "[data-vehicule-card]", "vehicules-no-results");
+  if (state.activeView === "vehicules-maintenance") wireSearch("maintenance-search-input", "maintenance-tbody", "tr[data-row]", "maintenance-no-results");
+  if (state.activeView === "inventaire") wireSearch("inventaire-search-input", "inventaire-tbody", "tr[data-inventaire-row]", "inventaire-no-results");
+  if (state.activeView === "inventaire-depenses") wireSearch("inv-dep-search-input", "inv-dep-tbody", "tr[data-row]", "inv-dep-no-results");
   if (state.activeView === "rentabilite") wireRentabiliteSelect();
   if (state.activeView === "parametres") { wireSettingsForm(); wireDashboardPrefsSelects(); }
 }
 
-function wireSearch(inputId, tbodyId, rowSelector, noResultsId) {
+function wireSearch(inputId, containerId, itemSelector, noResultsId) {
   var input = document.getElementById(inputId);
   if (!input) return;
   input.addEventListener("input", function () {
     var q = input.value.trim().toLowerCase();
-    var rows = document.querySelectorAll("#" + tbodyId + " tr" + rowSelector);
+    var items = document.querySelectorAll("#" + containerId + " " + itemSelector);
     var visible = 0;
-    rows.forEach(function (row) {
-      var match = row.getAttribute("data-search").indexOf(q) !== -1;
-      row.classList.toggle("row-hidden", !match);
+    items.forEach(function (item) {
+      var match = item.getAttribute("data-search").indexOf(q) !== -1;
+      item.classList.toggle("row-hidden", !match);
       if (match) visible++;
     });
     var noResults = document.getElementById(noResultsId);
@@ -1303,6 +1529,14 @@ function openVehiculeModal(mode, data) {
       fieldHtml("Année", "year", { type: "number", value: data && data.year, placeholder: "2024" }) +
       fieldHtml("Plaque", "plate", { value: data && data.plate, placeholder: "Ex. AB12345" }) +
     '</div>' +
+    '<div class="field-row">' +
+      fieldHtml("VIN / N° de série", "vin", { value: data && data.vin, placeholder: "Ex. 1FTFW1E5..." }) +
+      fieldHtml("Couleur", "color", { value: data && data.color, placeholder: "Ex. Blanc" }) +
+    '</div>' +
+    '<div class="field-row">' +
+      fieldHtml("Kilométrage", "mileage", { type: "number", value: data && data.mileage, placeholder: "Ex. 45000" }) +
+      fieldHtml("Date d'achat", "purchaseDate", { type: "date", value: data && data.purchaseDate }) +
+    '</div>' +
     fieldHtml("Notes", "notes", { tag: "textarea", value: data && data.notes, placeholder: "Notes internes…" }) +
     '<div class="form-actions"><button type="button" class="btn btn-ghost" data-close="modal">Annuler</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>' +
     '</form>';
@@ -1313,7 +1547,11 @@ function openVehiculeModal(mode, data) {
       var name = f.name.value.trim();
       var errEl = document.getElementById("vehicule-name-error");
       if (!name) { errEl.textContent = "Le nom est requis."; errEl.style.display = "block"; f.name.classList.add("has-error"); return; }
-      saveVehicule({ name: name, make: f.make.value.trim(), model: f.model.value.trim(), year: f.year.value.trim(), plate: f.plate.value.trim(), notes: f.notes.value.trim() }, data && data.id);
+      saveVehicule({
+        name: name, make: f.make.value.trim(), model: f.model.value.trim(), year: f.year.value.trim(), plate: f.plate.value.trim(),
+        vin: f.vin.value.trim(), color: f.color.value.trim(), mileage: f.mileage.value === "" ? "" : Number(f.mileage.value),
+        purchaseDate: f.purchaseDate.value || null, notes: f.notes.value.trim()
+      }, data && data.id);
     });
     f.name.addEventListener("input", function () { document.getElementById("vehicule-name-error").style.display = "none"; f.name.classList.remove("has-error"); });
     var first = f.querySelector("[autofocus]"); if (first) first.focus();
@@ -1434,6 +1672,34 @@ function openDepenseModal(mode, data) {
   });
 }
 
+function openMaintenanceModal(mode, data) {
+  var isEdit = mode === "edit";
+  var vehiculeOptions = state.vehicules.map(function (v) { return '<option value="' + v.id + '"' + (data && data.vehiculeId === v.id ? " selected" : "") + '>' + esc(v.name) + '</option>'; }).join("");
+  var typeOptions = MAINTENANCE_TYPES.map(function (t) { return '<option value="' + t + '"' + (data && data.type === t ? " selected" : "") + '>' + t + '</option>'; }).join("");
+  var body =
+    '<form id="maintenance-form">' +
+    fieldHtml("Véhicule", "vehiculeId", { tag: "select", options: vehiculeOptions, required: true }) +
+    fieldHtml("Type", "type", { tag: "select", options: typeOptions }) +
+    '<div class="field-row">' +
+      fieldHtml("Date effectuée", "date", { type: "date", value: data && data.date }) +
+      fieldHtml("Prochaine échéance", "nextDueDate", { type: "date", value: data && data.nextDueDate }) +
+    '</div>' +
+    fieldHtml("Notes", "notes", { tag: "textarea", value: data && data.notes, placeholder: "Notes internes…" }) +
+    '<p id="maintenance-error" class="field-error" style="display:none;"></p>' +
+    '<div class="form-actions"><button type="button" class="btn btn-ghost" data-close="modal">Annuler</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>' +
+    '</form>';
+  openModal(isEdit ? "Modifier la maintenance" : "Ajouter une maintenance", body, function () {
+    var f = document.getElementById("maintenance-form");
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var errEl = document.getElementById("maintenance-error");
+      if (!f.vehiculeId.value) { errEl.textContent = "Sélectionnez un véhicule."; errEl.style.display = "block"; return; }
+      saveMaintenance({ vehiculeId: f.vehiculeId.value, type: f.type.value, date: f.date.value || null, nextDueDate: f.nextDueDate.value || null, notes: f.notes.value.trim() }, data && data.id);
+    });
+    var first = f.querySelector("select"); if (first) first.focus();
+  });
+}
+
 /* ================= Global click delegation ================= */
 document.addEventListener("click", function (e) {
   var btn = e.target.closest("[data-action]");
@@ -1464,11 +1730,26 @@ document.addEventListener("click", function (e) {
     case "delete-depense": deleteDepense(state.depenses.find(function (d) { return d.id === id; })); break;
     case "reset-demo": resetDemoData(); break;
     case "clear-all": clearAllData(); break;
+    case "open-maintenance-modal": openMaintenanceModal("add"); break;
+    case "edit-maintenance": openMaintenanceModal("edit", state.maintenances.find(function (m) { return m.id === id; })); break;
+    case "delete-maintenance": deleteMaintenance(state.maintenances.find(function (m) { return m.id === id; })); break;
+    case "toggle-nav-popover": state.navPopoverOpen = !state.navPopoverOpen; render(); break;
+    case "toggle-nav-group": state.navExpanded[id] = !state.navExpanded[id]; render(); break;
+    case "toggle-nav-child-visible": {
+      var turningOn = state.navChildVisible[id] === false;
+      state.navChildVisible[id] = turningOn;
+      if (!turningOn && state.activeView === id) state.activeView = "dashboard";
+      saveNavChildVisibility(); render();
+      break;
+    }
     case "toggle-nav-visible": {
       var navPref = state.navPrefs.find(function (p) { return p.id === id; });
       if (navPref && LOCKED_NAV_IDS.indexOf(id) === -1) {
         navPref.visible = !navPref.visible;
-        if (!navPref.visible && state.activeView === id) state.activeView = "dashboard";
+        if (!navPref.visible) {
+          var activeItem = navItemById(state.activeView);
+          if (state.activeView === id || (activeItem && activeItem.parent === id)) state.activeView = "dashboard";
+        }
         saveNavPrefs(); render();
       }
       break;
