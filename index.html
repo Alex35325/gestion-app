@@ -794,31 +794,36 @@ function renderClients() {
 function renderRevenus() {
   var total = sumMontant(state.revenus);
   var header = '<div class="view-header"><div><h1 class="view-title">Revenus</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
-    '<button class="btn btn-primary" data-action="open-revenu-modal">' + icon("plus", 16) + 'Ajouter un revenu</button></div>';
+    '<button class="btn btn-primary" data-action="open-revenu-modal">' + icon("plus", 16) + 'Ajouter un revenu</button></div>' +
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="revenu-search-input" placeholder="Rechercher par client, courriel ou téléphone…" autocomplete="off"></div>';
 
   if (state.revenus.length === 0) {
     return header + '<div class="empty-state"><div class="empty-icon">' + icon("trendUp", 20) + '</div><p class="empty-title">Aucun revenu enregistré</p><p class="empty-subtitle">Ajoutez votre première entrée de revenu.</p>' +
       '<button class="btn btn-primary" style="margin-top:14px" data-action="open-revenu-modal">' + icon("plus", 16) + 'Ajouter un revenu</button></div>';
   }
 
-  function clientName(id) { var c = state.clients.find(function (x) { return x.id === id; }); return c ? c.name : "—"; }
+  function findClient(id) { return state.clients.find(function (x) { return x.id === id; }); }
   var sorted = state.revenus.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   var rows = sorted.map(function (r) {
-    return '<tr><td style="color:var(--text-secondary)">' + formatDate(r.date) + '</td>' +
-      '<td class="col-sm" style="color:var(--text-secondary)">' + esc(clientName(r.clientId)) + '</td>' +
+    var c = findClient(r.clientId);
+    var searchStr = [c ? c.name : "", c ? c.email : "", c ? c.phone : ""].join(" ").toLowerCase();
+    return '<tr data-revenu-row data-search="' + esc(searchStr) + '"><td style="color:var(--text-secondary)">' + formatDate(r.date) + '</td>' +
+      '<td class="col-sm" style="color:var(--text-secondary)">' + esc(c ? c.name : "—") + '</td>' +
       '<td class="col-md"><span class="badge badge-green">' + esc(r.categorie) + '</span></td>' +
       '<td class="num pos">' + formatCurrency(r.montant, state.settings.currency) + '</td>' +
       '<td class="actions"><button class="icon-btn" data-action="edit-revenu" data-id="' + r.id + '" aria-label="Modifier">' + icon("pencil", 15) + '</button>' +
       '<button class="icon-btn danger" data-action="delete-revenu" data-id="' + r.id + '" aria-label="Supprimer">' + icon("trash", 15) + '</button></td></tr>';
   }).join("");
 
-  return header + '<div class="table-card"><table><thead><tr><th>Date</th><th class="col-sm">Client</th><th class="col-md">Catégorie</th><th>Montant</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  return header + '<div class="table-card"><table><thead><tr><th>Date</th><th class="col-sm">Client</th><th class="col-md">Catégorie</th><th>Montant</th><th></th></tr></thead>' +
+    '<tbody id="revenus-tbody">' + rows + '</tbody></table><p class="no-results" id="revenus-no-results" style="display:none">Aucun revenu ne correspond à la recherche.</p></div>';
 }
 
 function renderDepenses() {
   var total = sumMontant(state.depenses);
   var header = '<div class="view-header"><div><h1 class="view-title">Dépenses</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
-    '<button class="btn btn-primary" data-action="open-depense-modal">' + icon("plus", 16) + 'Ajouter une dépense</button></div>';
+    '<button class="btn btn-primary" data-action="open-depense-modal">' + icon("plus", 16) + 'Ajouter une dépense</button></div>' +
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="depense-search-input" placeholder="Rechercher par date, catégorie ou montant…" autocomplete="off"></div>';
 
   if (state.depenses.length === 0) {
     return header + '<div class="empty-state"><div class="empty-icon">' + icon("trendDown", 20) + '</div><p class="empty-title">Aucune dépense enregistrée</p><p class="empty-subtitle">Ajoutez votre première dépense.</p>' +
@@ -827,7 +832,8 @@ function renderDepenses() {
 
   var sorted = state.depenses.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   var rows = sorted.map(function (d) {
-    return '<tr><td style="color:var(--text-secondary)">' + formatDate(d.date) + '</td>' +
+    var searchStr = [formatDate(d.date), d.date, d.categorie, String(d.montant), formatCurrency(d.montant, state.settings.currency), d.description || ""].join(" ").toLowerCase();
+    return '<tr data-depense-row data-search="' + esc(searchStr) + '"><td style="color:var(--text-secondary)">' + formatDate(d.date) + '</td>' +
       '<td class="col-sm"><span class="badge badge-red">' + esc(d.categorie) + '</span></td>' +
       '<td class="col-md" style="color:var(--text-secondary)">' + esc(d.description || "—") + '</td>' +
       '<td class="num neg">' + formatCurrency(d.montant, state.settings.currency) + '</td>' +
@@ -835,7 +841,8 @@ function renderDepenses() {
       '<button class="icon-btn danger" data-action="delete-depense" data-id="' + d.id + '" aria-label="Supprimer">' + icon("trash", 15) + '</button></td></tr>';
   }).join("");
 
-  return header + '<div class="table-card"><table><thead><tr><th>Date</th><th class="col-sm">Catégorie</th><th class="col-md">Description</th><th>Montant</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  return header + '<div class="table-card"><table><thead><tr><th>Date</th><th class="col-sm">Catégorie</th><th class="col-md">Description</th><th>Montant</th><th></th></tr></thead>' +
+    '<tbody id="depenses-tbody">' + rows + '</tbody></table><p class="no-results" id="depenses-no-results" style="display:none">Aucune dépense ne correspond à la recherche.</p></div>';
 }
 
 function renderParametres() {
@@ -895,23 +902,25 @@ function render() {
       '<main class="main-content">' + viewFns[state.activeView]() + '</main>' +
     '</div>';
 
-  if (state.activeView === "clients") wireClientSearch();
+  if (state.activeView === "clients") wireSearch("client-search-input", "clients-tbody", "[data-client-row]", "clients-no-results");
+  if (state.activeView === "revenus") wireSearch("revenu-search-input", "revenus-tbody", "[data-revenu-row]", "revenus-no-results");
+  if (state.activeView === "depenses") wireSearch("depense-search-input", "depenses-tbody", "[data-depense-row]", "depenses-no-results");
   if (state.activeView === "parametres") wireSettingsForm();
 }
 
-function wireClientSearch() {
-  var input = document.getElementById("client-search-input");
+function wireSearch(inputId, tbodyId, rowSelector, noResultsId) {
+  var input = document.getElementById(inputId);
   if (!input) return;
   input.addEventListener("input", function () {
     var q = input.value.trim().toLowerCase();
-    var rows = document.querySelectorAll("#clients-tbody tr[data-client-row]");
+    var rows = document.querySelectorAll("#" + tbodyId + " tr" + rowSelector);
     var visible = 0;
     rows.forEach(function (row) {
       var match = row.getAttribute("data-search").indexOf(q) !== -1;
       row.classList.toggle("row-hidden", !match);
       if (match) visible++;
     });
-    var noResults = document.getElementById("clients-no-results");
+    var noResults = document.getElementById(noResultsId);
     if (noResults) noResults.style.display = (visible === 0 && q) ? "block" : "none";
   });
 }
