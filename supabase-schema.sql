@@ -44,6 +44,12 @@ create table if not exists public.vehicules (
   updated_at bigint not null
 );
 
+-- Optional link from a revenu/depense to a vehicule, used by the
+-- Rentabilité tab. Added via ALTER so this stays safe to re-run even
+-- if revenus/depenses already existed before vehicules did.
+alter table public.revenus add column if not exists vehicule_id text references public.vehicules(id) on delete set null;
+alter table public.depenses add column if not exists vehicule_id text references public.vehicules(id) on delete set null;
+
 create table if not exists public.inventaire (
   id text primary key,
   name text not null,
@@ -55,6 +61,11 @@ create table if not exists public.inventaire (
   created_at bigint not null,
   updated_at bigint not null
 );
+
+-- Optional link from a revenu/depense to an inventaire item ("produit"),
+-- also used by the Rentabilité tab.
+alter table public.revenus add column if not exists produit_id text references public.inventaire(id) on delete set null;
+alter table public.depenses add column if not exists produit_id text references public.inventaire(id) on delete set null;
 
 create table if not exists public.settings (
   id int primary key default 1,
