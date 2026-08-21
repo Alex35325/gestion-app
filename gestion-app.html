@@ -5,6 +5,7 @@
 
 <style>
   :root {
+    color-scheme: light;
     --bg: #f8fafc;
     --surface: #ffffff;
     --border: #e2e8f0;
@@ -27,6 +28,7 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
+      color-scheme: dark;
       --bg: #0b1220;
       --surface: #121b2e;
       --border: #253247;
@@ -49,6 +51,7 @@
   }
 
   :root[data-theme="dark"] {
+    color-scheme: dark;
     --bg: #0b1220;
     --surface: #121b2e;
     --border: #253247;
@@ -281,6 +284,14 @@
   input[type="text"], input[type="email"], input[type="number"], input[type="date"], select, textarea {
     width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
     padding: 9px 11px;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1; }
+  select option { background: var(--surface); color: var(--text); }
+  input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text);
+    -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+    box-shadow: 0 0 0 1000px var(--surface) inset;
+    transition: background-color 9999s ease-in-out 0s;
   }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-ring); }
   input.has-error { border-color: var(--danger); }
