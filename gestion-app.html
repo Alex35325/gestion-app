@@ -920,8 +920,8 @@ function wireSettingsForm() {
 /* ================= Modal forms ================= */
 function fieldHtml(label, name, opts) {
   opts = opts || {};
-  var attrs = 'name="' + name + '" id="f-' + name + '"';
-  if (opts.type) attrs += ' type="' + opts.type + '"';
+  var attrs = 'name="' + name + '" id="f-' + name + '" autocomplete="off"';
+  if (opts.tag !== "textarea" && opts.tag !== "select") attrs += ' type="' + (opts.type || "text") + '"';
   if (opts.step) attrs += ' step="' + opts.step + '"';
   if (opts.min !== undefined) attrs += ' min="' + opts.min + '"';
   if (opts.placeholder) attrs += ' placeholder="' + esc(opts.placeholder) + '"';
