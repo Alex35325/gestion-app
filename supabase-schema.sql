@@ -44,6 +44,18 @@ create table if not exists public.vehicules (
   updated_at bigint not null
 );
 
+create table if not exists public.inventaire (
+  id text primary key,
+  name text not null,
+  quantity numeric not null default 0,
+  unit text not null default '',
+  category text not null default '',
+  min_threshold numeric,
+  notes text not null default '',
+  created_at bigint not null,
+  updated_at bigint not null
+);
+
 create table if not exists public.settings (
   id int primary key default 1,
   company_name text not null default 'Mon entreprise',
@@ -62,6 +74,7 @@ alter table public.clients enable row level security;
 alter table public.revenus enable row level security;
 alter table public.depenses enable row level security;
 alter table public.vehicules enable row level security;
+alter table public.inventaire enable row level security;
 alter table public.settings enable row level security;
 
 drop policy if exists "public access" on public.clients;
@@ -76,7 +89,10 @@ create policy "public access" on public.depenses for all using (true) with check
 drop policy if exists "public access" on public.vehicules;
 create policy "public access" on public.vehicules for all using (true) with check (true);
 
+drop policy if exists "public access" on public.inventaire;
+create policy "public access" on public.inventaire for all using (true) with check (true);
+
 drop policy if exists "public access" on public.settings;
 create policy "public access" on public.settings for all using (true) with check (true);
 
-grant all on public.clients, public.revenus, public.depenses, public.vehicules, public.settings to anon, authenticated;
+grant all on public.clients, public.revenus, public.depenses, public.vehicules, public.inventaire, public.settings to anon, authenticated;
