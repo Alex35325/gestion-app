@@ -50,6 +50,10 @@ create table if not exists public.vehicules (
 alter table public.revenus add column if not exists vehicule_id text references public.vehicules(id) on delete set null;
 alter table public.depenses add column if not exists vehicule_id text references public.vehicules(id) on delete set null;
 
+-- Optional link from a depense to a client (revenus already had this from
+-- the start) — lets Dépenses appear as a sub-tab under Clients too.
+alter table public.depenses add column if not exists client_id text references public.clients(id) on delete set null;
+
 -- Extra identification fields on vehicules (Info véhicule).
 alter table public.vehicules add column if not exists vin text not null default '';
 alter table public.vehicules add column if not exists color text not null default '';

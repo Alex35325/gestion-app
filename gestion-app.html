@@ -358,12 +358,15 @@ var DEFAULT_SETTINGS = { companyName: "Mon entreprise", currency: "CAD" };
 var NAV_ITEMS = [
   { id: "dashboard", label: "Tableau de bord", icon: "dashboard" },
   { id: "clients", label: "Clients", icon: "users" },
+  { id: "clients-revenus", label: "Revenus", icon: "trendUp", parent: "clients" },
+  { id: "clients-depenses", label: "Dépenses", icon: "trendDown", parent: "clients" },
   { id: "vehicules", label: "Véhicules", icon: "car" },
   { id: "vehicules-revenus", label: "Revenus", icon: "trendUp", parent: "vehicules" },
   { id: "vehicules-depenses", label: "Dépenses", icon: "trendDown", parent: "vehicules" },
   { id: "vehicules-info", label: "Info véhicule", icon: "car", parent: "vehicules" },
   { id: "vehicules-maintenance", label: "Maintenance", icon: "wrench", parent: "vehicules" },
   { id: "inventaire", label: "Inventaire", icon: "box" },
+  { id: "inventaire-revenus", label: "Revenus", icon: "trendUp", parent: "inventaire" },
   { id: "inventaire-depenses", label: "Dépenses", icon: "trendDown", parent: "inventaire" },
   { id: "rentabilite", label: "Rentabilité", icon: "chart" },
   { id: "parametres", label: "Paramètres", icon: "settings" }
@@ -501,8 +504,8 @@ function clientToDb(c) { return { id: c.id, name: c.name, email: c.email || "", 
 function clientFromDb(r) { return { id: r.id, name: r.name, email: r.email, phone: r.phone, notes: r.notes, createdAt: r.created_at, updatedAt: r.updated_at }; }
 function revenuToDb(r) { return { id: r.id, date: r.date, client_id: r.clientId || null, vehicule_id: r.vehiculeId || null, produit_id: r.produitId || null, montant: r.montant, categorie: r.categorie, description: r.description || "", created_at: r.createdAt, updated_at: r.updatedAt }; }
 function revenuFromDb(r) { return { id: r.id, date: r.date, clientId: r.client_id, vehiculeId: r.vehicule_id, produitId: r.produit_id, montant: Number(r.montant), categorie: r.categorie, description: r.description, createdAt: r.created_at, updatedAt: r.updated_at }; }
-function depenseToDb(d) { return { id: d.id, date: d.date, vehicule_id: d.vehiculeId || null, produit_id: d.produitId || null, montant: d.montant, categorie: d.categorie, description: d.description || "", created_at: d.createdAt, updated_at: d.updatedAt }; }
-function depenseFromDb(d) { return { id: d.id, date: d.date, vehiculeId: d.vehicule_id, produitId: d.produit_id, montant: Number(d.montant), categorie: d.categorie, description: d.description, createdAt: d.created_at, updatedAt: d.updated_at }; }
+function depenseToDb(d) { return { id: d.id, date: d.date, client_id: d.clientId || null, vehicule_id: d.vehiculeId || null, produit_id: d.produitId || null, montant: d.montant, categorie: d.categorie, description: d.description || "", created_at: d.createdAt, updated_at: d.updatedAt }; }
+function depenseFromDb(d) { return { id: d.id, date: d.date, clientId: d.client_id, vehiculeId: d.vehicule_id, produitId: d.produit_id, montant: Number(d.montant), categorie: d.categorie, description: d.description, createdAt: d.created_at, updatedAt: d.updated_at }; }
 function vehiculeToDb(v) { return { id: v.id, name: v.name, make: v.make || "", model: v.model || "", year: v.year || "", plate: v.plate || "", vin: v.vin || "", color: v.color || "", mileage: v.mileage === "" || v.mileage == null ? null : v.mileage, purchase_date: v.purchaseDate || null, notes: v.notes || "", created_at: v.createdAt, updated_at: v.updatedAt }; }
 function vehiculeFromDb(v) { return { id: v.id, name: v.name, make: v.make, model: v.model, year: v.year, plate: v.plate, vin: v.vin || "", color: v.color || "", mileage: v.mileage === null || v.mileage === undefined ? "" : Number(v.mileage), purchaseDate: v.purchase_date, notes: v.notes, createdAt: v.created_at, updatedAt: v.updated_at }; }
 function maintenanceToDb(m) { return { id: m.id, vehicule_id: m.vehiculeId, type: m.type, date: m.date || null, next_due_date: m.nextDueDate || null, notes: m.notes || "", created_at: m.createdAt, updated_at: m.updatedAt }; }
@@ -1305,6 +1308,27 @@ function renderInventaireDepenses() {
     emptyTitle: "Aucune dépense liée à un produit", emptySubtitle: "Ajoutez une dépense et sélectionnez un produit dans son formulaire."
   });
 }
+function renderInventaireRevenus() {
+  var list = state.revenus.filter(function (r) { return !!r.produitId; });
+  return renderRevenusTableGeneric(list, {
+    title: "Revenus — Inventaire", searchId: "inv-rev-search-input", tbodyId: "inv-rev-tbody", noResultsId: "inv-rev-no-results",
+    emptyTitle: "Aucun revenu lié à un produit", emptySubtitle: "Ajoutez un revenu et sélectionnez un produit dans son formulaire."
+  });
+}
+function renderClientsRevenus() {
+  var list = state.revenus.filter(function (r) { return !!r.clientId; });
+  return renderRevenusTableGeneric(list, {
+    title: "Revenus — Clients", searchId: "cli-rev-search-input", tbodyId: "cli-rev-tbody", noResultsId: "cli-rev-no-results",
+    emptyTitle: "Aucun revenu lié à un client", emptySubtitle: "Ajoutez un revenu et sélectionnez un client dans son formulaire."
+  });
+}
+function renderClientsDepenses() {
+  var list = state.depenses.filter(function (d) { return !!d.clientId; });
+  return renderDepensesTableGeneric(list, {
+    title: "Dépenses — Clients", searchId: "cli-dep-search-input", tbodyId: "cli-dep-tbody", noResultsId: "cli-dep-no-results",
+    emptyTitle: "Aucune dépense liée à un client", emptySubtitle: "Ajoutez une dépense et sélectionnez un client dans son formulaire."
+  });
+}
 
 function renderDashboardPrefsSection() {
   var kpiSelects = state.dashboardPrefs.kpis.map(function (kpiId, idx) {
@@ -1387,9 +1411,10 @@ function render() {
   var root = document.getElementById("app-root");
   var viewFns = {
     dashboard: renderDashboard, clients: renderClients,
+    "clients-revenus": renderClientsRevenus, "clients-depenses": renderClientsDepenses,
     "vehicules-revenus": renderVehiculesRevenus, "vehicules-depenses": renderVehiculesDepenses,
     "vehicules-info": renderVehiculesInfo, "vehicules-maintenance": renderMaintenance,
-    inventaire: renderInventaire, "inventaire-depenses": renderInventaireDepenses,
+    inventaire: renderInventaire, "inventaire-revenus": renderInventaireRevenus, "inventaire-depenses": renderInventaireDepenses,
     rentabilite: renderRentabilite, parametres: renderParametres
   };
   var viewLabel = NAV_ITEMS.filter(function (n) { return n.id === state.activeView; })[0].label;
@@ -1418,11 +1443,14 @@ function render() {
     '</div>';
 
   if (state.activeView === "clients") wireSearch("client-search-input", "clients-tbody", "tr[data-client-row]", "clients-no-results");
+  if (state.activeView === "clients-revenus") wireSearch("cli-rev-search-input", "cli-rev-tbody", "tr[data-row]", "cli-rev-no-results");
+  if (state.activeView === "clients-depenses") wireSearch("cli-dep-search-input", "cli-dep-tbody", "tr[data-row]", "cli-dep-no-results");
   if (state.activeView === "vehicules-revenus") wireSearch("veh-rev-search-input", "veh-rev-tbody", "tr[data-row]", "veh-rev-no-results");
   if (state.activeView === "vehicules-depenses") wireSearch("veh-dep-search-input", "veh-dep-tbody", "tr[data-row]", "veh-dep-no-results");
   if (state.activeView === "vehicules-info") wireSearch("vehicule-search-input", "vehicules-info-grid", "[data-vehicule-card]", "vehicules-no-results");
   if (state.activeView === "vehicules-maintenance") wireSearch("maintenance-search-input", "maintenance-tbody", "tr[data-row]", "maintenance-no-results");
   if (state.activeView === "inventaire") wireSearch("inventaire-search-input", "inventaire-tbody", "tr[data-inventaire-row]", "inventaire-no-results");
+  if (state.activeView === "inventaire-revenus") wireSearch("inv-rev-search-input", "inv-rev-tbody", "tr[data-row]", "inv-rev-no-results");
   if (state.activeView === "inventaire-depenses") wireSearch("inv-dep-search-input", "inv-dep-tbody", "tr[data-row]", "inv-dep-no-results");
   if (state.activeView === "rentabilite") wireRentabiliteSelect();
   if (state.activeView === "parametres") { wireSettingsForm(); wireDashboardPrefsSelects(); }
@@ -1638,6 +1666,9 @@ function openRevenuModal(mode, data) {
 function openDepenseModal(mode, data) {
   var isEdit = mode === "edit";
   var catOptions = EXPENSE_CATEGORIES.map(function (c) { return '<option value="' + c + '"' + (data && data.categorie === c ? " selected" : "") + '>' + c + '</option>'; }).join("");
+  var clientOptions = '<option value="">Aucun client</option>' + state.clients.map(function (c) {
+    return '<option value="' + c.id + '"' + (data && data.clientId === c.id ? " selected" : "") + '>' + esc(c.name) + '</option>';
+  }).join("");
   var vehiculeOptions = '<option value="">Aucun véhicule</option>' + state.vehicules.map(function (v) {
     return '<option value="' + v.id + '"' + (data && data.vehiculeId === v.id ? " selected" : "") + '>' + esc(v.name) + '</option>';
   }).join("");
@@ -1650,7 +1681,10 @@ function openDepenseModal(mode, data) {
       fieldHtml("Date", "date", { type: "date", value: (data && data.date) || todayStr(), required: true }) +
       fieldHtml("Montant", "montant", { type: "number", step: "0.01", min: "0", value: data ? data.montant : "", placeholder: "0.00", required: true }) +
     '</div>' +
-    fieldHtml("Catégorie", "categorie", { tag: "select", options: catOptions }) +
+    '<div class="field-row">' +
+      fieldHtml("Catégorie", "categorie", { tag: "select", options: catOptions }) +
+      fieldHtml("Client (rentabilité)", "clientId", { tag: "select", options: clientOptions }) +
+    '</div>' +
     '<div class="field-row">' +
       fieldHtml("Véhicule (rentabilité)", "vehiculeId", { tag: "select", options: vehiculeOptions }) +
       fieldHtml("Produit (rentabilité)", "produitId", { tag: "select", options: produitOptions }) +
@@ -1666,7 +1700,7 @@ function openDepenseModal(mode, data) {
       var amount = Number(f.montant.value);
       var errEl = document.getElementById("depense-error");
       if (!f.date.value || !amount || amount <= 0) { errEl.textContent = "La date et un montant valide (supérieur à 0) sont requis."; errEl.style.display = "block"; return; }
-      saveDepense({ date: f.date.value, vehiculeId: f.vehiculeId.value || null, produitId: f.produitId.value || null, montant: amount, categorie: f.categorie.value, description: f.description.value.trim() }, data && data.id);
+      saveDepense({ date: f.date.value, clientId: f.clientId.value || null, vehiculeId: f.vehiculeId.value || null, produitId: f.produitId.value || null, montant: amount, categorie: f.categorie.value, description: f.description.value.trim() }, data && data.id);
     });
     document.getElementById("f-date").focus();
   });
