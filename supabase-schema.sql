@@ -32,6 +32,18 @@ create table if not exists public.depenses (
   updated_at bigint not null
 );
 
+create table if not exists public.vehicules (
+  id text primary key,
+  name text not null,
+  make text not null default '',
+  model text not null default '',
+  year text not null default '',
+  plate text not null default '',
+  notes text not null default '',
+  created_at bigint not null,
+  updated_at bigint not null
+);
+
 create table if not exists public.settings (
   id int primary key default 1,
   company_name text not null default 'Mon entreprise',
@@ -49,6 +61,7 @@ on conflict (id) do nothing;
 alter table public.clients enable row level security;
 alter table public.revenus enable row level security;
 alter table public.depenses enable row level security;
+alter table public.vehicules enable row level security;
 alter table public.settings enable row level security;
 
 drop policy if exists "public access" on public.clients;
@@ -60,7 +73,10 @@ create policy "public access" on public.revenus for all using (true) with check 
 drop policy if exists "public access" on public.depenses;
 create policy "public access" on public.depenses for all using (true) with check (true);
 
+drop policy if exists "public access" on public.vehicules;
+create policy "public access" on public.vehicules for all using (true) with check (true);
+
 drop policy if exists "public access" on public.settings;
 create policy "public access" on public.settings for all using (true) with check (true);
 
-grant all on public.clients, public.revenus, public.depenses, public.settings to anon, authenticated;
+grant all on public.clients, public.revenus, public.depenses, public.vehicules, public.settings to anon, authenticated;

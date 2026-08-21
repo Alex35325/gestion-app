@@ -326,6 +326,7 @@ var NAV_ITEMS = [
   { id: "clients", label: "Clients", icon: "users" },
   { id: "revenus", label: "Revenus", icon: "trendUp" },
   { id: "depenses", label: "Dépenses", icon: "trendDown" },
+  { id: "vehicules", label: "Véhicules", icon: "car" },
   { id: "parametres", label: "Paramètres", icon: "settings" }
 ];
 var SUPABASE_URL = "https://fquwpdzceuqlxvewacxz.supabase.co";
@@ -339,6 +340,7 @@ function icon(name, size) {
     users: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="8.5" r="2.6"/><path d="M15.5 14.6c2.6.2 4.5 2.3 4.5 5.4"/>',
     trendUp: '<polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/>',
     trendDown: '<polyline points="3,7 9,13 13,9 21,18"/><polyline points="21,11 21,18 14,18"/>',
+    car: '<path d="M3.5 16v-3.2c0-.5.2-1 .6-1.3l1.6-1.5.9-2.6a1.6 1.6 0 0 1 1.5-1.1h7.8c.7 0 1.3.4 1.5 1.1l.9 2.6 1.6 1.5c.4.3.6.8.6 1.3V16"/><path d="M3.5 16h17v2a1 1 0 0 1-1 1h-1.5a1 1 0 0 1-1-1v-1h-11v1a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1v-2Z"/><path d="M5.5 10.5h13"/><circle cx="7.5" cy="16" r="1.4"/><circle cx="16.5" cy="16" r="1.4"/>',
     settings: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
     menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
     x: '<line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/>',
@@ -457,10 +459,12 @@ function revenuToDb(r) { return { id: r.id, date: r.date, client_id: r.clientId 
 function revenuFromDb(r) { return { id: r.id, date: r.date, clientId: r.client_id, montant: Number(r.montant), categorie: r.categorie, description: r.description, createdAt: r.created_at, updatedAt: r.updated_at }; }
 function depenseToDb(d) { return { id: d.id, date: d.date, montant: d.montant, categorie: d.categorie, description: d.description || "", created_at: d.createdAt, updated_at: d.updatedAt }; }
 function depenseFromDb(d) { return { id: d.id, date: d.date, montant: Number(d.montant), categorie: d.categorie, description: d.description, createdAt: d.created_at, updatedAt: d.updated_at }; }
+function vehiculeToDb(v) { return { id: v.id, name: v.name, make: v.make || "", model: v.model || "", year: v.year || "", plate: v.plate || "", notes: v.notes || "", created_at: v.createdAt, updated_at: v.updatedAt }; }
+function vehiculeFromDb(v) { return { id: v.id, name: v.name, make: v.make, model: v.model, year: v.year, plate: v.plate, notes: v.notes, createdAt: v.created_at, updatedAt: v.updated_at }; }
 
 /* ================= State ================= */
 var state = {
-  clients: [], revenus: [], depenses: [], settings: DEFAULT_SETTINGS,
+  clients: [], revenus: [], depenses: [], vehicules: [], settings: DEFAULT_SETTINGS,
   activeView: "dashboard", sidebarCollapsed: false, mobileNavOpen: false,
   dashboardPeriod: "mois"
 };
@@ -491,6 +495,13 @@ async function init() {
     console.error(e);
     showToast("error", "Connexion à la base de données impossible. Vérifiez votre connexion et rechargez la page.");
   }
+
+  // Loaded independently: a missing/not-yet-created table here (e.g. a new
+  // feature whose SQL hasn't been run yet) shouldn't break the whole app.
+  try {
+    state.vehicules = (await sbGet("vehicules", "select=*&order=created_at.asc")).map(vehiculeFromDb);
+  } catch (e) { console.error(e); state.vehicules = []; }
+
   render();
 }
 
@@ -574,6 +585,28 @@ function deleteClient(client) {
     closeConfirm(); render();
     try { await sbDelete("clients", client.id); showToast("success", "Client supprimé."); }
     catch (e) { state.clients = prev; render(); showToast("error", "La suppression a échoué. Réessayez."); }
+  });
+}
+
+async function saveVehicule(data, id) {
+  var prev = state.vehicules;
+  var row = id
+    ? Object.assign({}, state.vehicules.find(function (v) { return v.id === id; }), data, { updatedAt: Date.now() })
+    : Object.assign({ id: uid(), createdAt: Date.now(), updatedAt: Date.now() }, data);
+  state.vehicules = id ? state.vehicules.map(function (v) { return v.id === id ? row : v; }) : state.vehicules.concat([row]);
+  closeModal(); render();
+  try {
+    if (id) await sbUpdate("vehicules", id, vehiculeToDb(row)); else await sbInsert("vehicules", vehiculeToDb(row));
+    showToast("success", id ? "Véhicule mis à jour." : "Véhicule ajouté.");
+  } catch (e) { state.vehicules = prev; render(); showToast("error", "L'enregistrement a échoué. Réessayez."); }
+}
+function deleteVehicule(vehicule) {
+  openConfirm("Supprimer « " + vehicule.name + " » ? Cette action est irréversible.", async function () {
+    var prev = state.vehicules;
+    state.vehicules = state.vehicules.filter(function (v) { return v.id !== vehicule.id; });
+    closeConfirm(); render();
+    try { await sbDelete("vehicules", vehicule.id); showToast("success", "Véhicule supprimé."); }
+    catch (e) { state.vehicules = prev; render(); showToast("error", "La suppression a échoué. Réessayez."); }
   });
 }
 
@@ -783,6 +816,30 @@ function renderClients() {
     '<tbody id="clients-tbody">' + rows + '</tbody></table><p class="no-results" id="clients-no-results" style="display:none">Aucun client ne correspond à la recherche.</p></div>';
 }
 
+function renderVehicules() {
+  var addBtn = '<button class="btn btn-primary" data-action="open-vehicule-modal">' + icon("plus", 16) + 'Ajouter un véhicule</button>';
+  var header = '<div class="view-header"><div><h1 class="view-title">Véhicules</h1><p class="view-subtitle">Votre flotte de véhicules</p></div>' + addBtn + '</div>' +
+    '<div class="search-bar">' + icon("search", 16) + '<input type="text" id="vehicule-search-input" placeholder="Rechercher par nom, marque, modèle ou plaque…" autocomplete="off"></div>';
+
+  if (state.vehicules.length === 0) {
+    return header + '<div class="empty-state"><div class="empty-icon">' + icon("car", 20) + '</div><p class="empty-title">Aucun véhicule</p><p class="empty-subtitle">Ajoutez votre premier véhicule pour commencer.</p>' +
+      '<button class="btn btn-primary" style="margin-top:14px" data-action="open-vehicule-modal">' + icon("plus", 16) + 'Ajouter un véhicule</button></div>';
+  }
+
+  var rows = state.vehicules.map(function (v) {
+    var searchStr = [v.name, v.make, v.model, v.year, v.plate].join(" ").toLowerCase();
+    var makeModel = [v.make, v.model].filter(Boolean).join(" ") || "—";
+    return '<tr data-vehicule-row data-search="' + esc(searchStr) + '"><td style="font-weight:600;">' + esc(v.name) + '</td>' +
+      '<td class="col-sm" style="color:var(--text-secondary)">' + esc(makeModel) + (v.year ? " (" + esc(v.year) + ")" : "") + '</td>' +
+      '<td class="col-md" style="color:var(--text-secondary)">' + esc(v.plate || "—") + '</td>' +
+      '<td class="actions"><button class="icon-btn" data-action="edit-vehicule" data-id="' + v.id + '" aria-label="Modifier">' + icon("pencil", 15) + '</button>' +
+      '<button class="icon-btn danger" data-action="delete-vehicule" data-id="' + v.id + '" aria-label="Supprimer">' + icon("trash", 15) + '</button></td></tr>';
+  }).join("");
+
+  return header + '<div class="table-card"><table><thead><tr><th>Nom</th><th class="col-sm">Marque / modèle</th><th class="col-md">Plaque</th><th></th></tr></thead>' +
+    '<tbody id="vehicules-tbody">' + rows + '</tbody></table><p class="no-results" id="vehicules-no-results" style="display:none">Aucun véhicule ne correspond à la recherche.</p></div>';
+}
+
 function renderRevenus() {
   var total = sumMontant(state.revenus);
   var header = '<div class="view-header"><div><h1 class="view-title">Revenus</h1><p class="view-subtitle">Total : ' + formatCurrency(total, state.settings.currency) + '</p></div>' +
@@ -870,7 +927,7 @@ function navHtml(collapsed) {
 
 function render() {
   var root = document.getElementById("app-root");
-  var viewFns = { dashboard: renderDashboard, clients: renderClients, revenus: renderRevenus, depenses: renderDepenses, parametres: renderParametres };
+  var viewFns = { dashboard: renderDashboard, clients: renderClients, revenus: renderRevenus, depenses: renderDepenses, vehicules: renderVehicules, parametres: renderParametres };
   var viewLabel = NAV_ITEMS.filter(function (n) { return n.id === state.activeView; })[0].label;
 
   root.innerHTML =
@@ -897,6 +954,7 @@ function render() {
   if (state.activeView === "clients") wireSearch("client-search-input", "clients-tbody", "[data-client-row]", "clients-no-results");
   if (state.activeView === "revenus") wireSearch("revenu-search-input", "revenus-tbody", "[data-revenu-row]", "revenus-no-results");
   if (state.activeView === "depenses") wireSearch("depense-search-input", "depenses-tbody", "[data-depense-row]", "depenses-no-results");
+  if (state.activeView === "vehicules") wireSearch("vehicule-search-input", "vehicules-tbody", "[data-vehicule-row]", "vehicules-no-results");
   if (state.activeView === "parametres") wireSettingsForm();
 }
 
@@ -965,6 +1023,37 @@ function openClientModal(mode, data) {
       saveClient({ name: name, email: f.email.value.trim(), phone: f.phone.value.trim(), notes: f.notes.value.trim() }, data && data.id);
     });
     f.name.addEventListener("input", function () { document.getElementById("client-name-error").style.display = "none"; f.name.classList.remove("has-error"); });
+    var first = f.querySelector("[autofocus]"); if (first) first.focus();
+  });
+}
+
+function openVehiculeModal(mode, data) {
+  var isEdit = mode === "edit";
+  var body =
+    '<form id="vehicule-form">' +
+    fieldHtml("Nom", "name", { value: data && data.name, required: true, placeholder: "Ex. Camion 1", autofocus: true }) +
+    '<div id="vehicule-name-error" class="field-error" style="display:none;margin:-9px 0 10px;"></div>' +
+    '<div class="field-row">' +
+      fieldHtml("Marque", "make", { value: data && data.make, placeholder: "Ex. Ford" }) +
+      fieldHtml("Modèle", "model", { value: data && data.model, placeholder: "Ex. F-150" }) +
+    '</div>' +
+    '<div class="field-row">' +
+      fieldHtml("Année", "year", { type: "number", value: data && data.year, placeholder: "2024" }) +
+      fieldHtml("Plaque", "plate", { value: data && data.plate, placeholder: "Ex. AB12345" }) +
+    '</div>' +
+    fieldHtml("Notes", "notes", { tag: "textarea", value: data && data.notes, placeholder: "Notes internes…" }) +
+    '<div class="form-actions"><button type="button" class="btn btn-ghost" data-close="modal">Annuler</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>' +
+    '</form>';
+  openModal(isEdit ? "Modifier le véhicule" : "Ajouter un véhicule", body, function (layer) {
+    var f = document.getElementById("vehicule-form");
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = f.name.value.trim();
+      var errEl = document.getElementById("vehicule-name-error");
+      if (!name) { errEl.textContent = "Le nom est requis."; errEl.style.display = "block"; f.name.classList.add("has-error"); return; }
+      saveVehicule({ name: name, make: f.make.value.trim(), model: f.model.value.trim(), year: f.year.value.trim(), plate: f.plate.value.trim(), notes: f.notes.value.trim() }, data && data.id);
+    });
+    f.name.addEventListener("input", function () { document.getElementById("vehicule-name-error").style.display = "none"; f.name.classList.remove("has-error"); });
     var first = f.querySelector("[autofocus]"); if (first) first.focus();
   });
 }
@@ -1042,6 +1131,9 @@ document.addEventListener("click", function (e) {
     case "open-client-modal": openClientModal("add"); break;
     case "edit-client": openClientModal("edit", state.clients.find(function (c) { return c.id === id; })); break;
     case "delete-client": deleteClient(state.clients.find(function (c) { return c.id === id; })); break;
+    case "open-vehicule-modal": openVehiculeModal("add"); break;
+    case "edit-vehicule": openVehiculeModal("edit", state.vehicules.find(function (v) { return v.id === id; })); break;
+    case "delete-vehicule": deleteVehicule(state.vehicules.find(function (v) { return v.id === id; })); break;
     case "open-revenu-modal": openRevenuModal("add"); break;
     case "edit-revenu": openRevenuModal("edit", state.revenus.find(function (r) { return r.id === id; })); break;
     case "delete-revenu": deleteRevenu(state.revenus.find(function (r) { return r.id === id; })); break;
