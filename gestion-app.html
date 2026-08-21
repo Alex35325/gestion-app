@@ -307,6 +307,11 @@
 
   .settings-wrap { max-width: 560px; }
   .demo-note { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+  .nav-pref-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+  .nav-pref-row + .nav-pref-row { margin-top: 6px; }
+  .nav-pref-label { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13.5px; min-width: 0; }
+  .nav-pref-locked { color: var(--text-muted); font-size: 11px; }
+  .nav-pref-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
 </style>
 
 <div id="app-root"></div>
@@ -354,6 +359,8 @@ function icon(name, size) {
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="20" y1="20" x2="15.3" y2="15.3"/>',
     chevronLeft: '<polyline points="14,4 6,12 14,20"/>',
     chevronRight: '<polyline points="10,4 18,12 10,20"/>',
+    chevronUp: '<polyline points="4,15 12,7 20,15"/>',
+    chevronDown: '<polyline points="4,9 12,17 20,9"/>',
     alertCircle: '<circle cx="12" cy="12" r="9"/><line x1="12" y1="7.5" x2="12" y2="13"/><circle cx="12" cy="16.3" r="0.9" fill="currentColor" stroke="none"/>',
     checkCircle: '<circle cx="12" cy="12" r="9"/><polyline points="7.5,12.3 10.4,15.2 16.5,9"/>',
     arrowUpRight: '<line x1="6" y1="18" x2="18" y2="6"/><polyline points="9,6 18,6 18,15"/>',
@@ -468,11 +475,42 @@ function vehiculeFromDb(v) { return { id: v.id, name: v.name, make: v.make, mode
 function inventaireToDb(i) { return { id: i.id, name: i.name, quantity: i.quantity, unit: i.unit || "", category: i.category || "", min_threshold: i.minThreshold === "" || i.minThreshold == null ? null : i.minThreshold, notes: i.notes || "", created_at: i.createdAt, updated_at: i.updatedAt }; }
 function inventaireFromDb(i) { return { id: i.id, name: i.name, quantity: Number(i.quantity), unit: i.unit, category: i.category, minThreshold: i.min_threshold === null ? "" : Number(i.min_threshold), notes: i.notes, createdAt: i.created_at, updatedAt: i.updated_at }; }
 
+/* ================= Nav preferences (per-device, localStorage) =================
+   Which tabs show in the menu, and in what order. Not shared via Supabase —
+   this is a personal viewing preference, not app data. */
+var NAV_PREFS_KEY = "gestionapp.navPrefs";
+var LOCKED_NAV_IDS = ["dashboard", "parametres"];
+
+function loadNavPrefs() {
+  var saved = null;
+  try { var raw = localStorage.getItem(NAV_PREFS_KEY); saved = raw ? JSON.parse(raw) : null; } catch (e) { saved = null; }
+  var byId = {};
+  (saved || []).forEach(function (p) { byId[p.id] = p; });
+  var validIds = NAV_ITEMS.map(function (n) { return n.id; });
+  var ordered = [];
+  if (saved) { saved.forEach(function (p) { if (validIds.indexOf(p.id) !== -1) ordered.push(p.id); }); }
+  validIds.forEach(function (id) { if (ordered.indexOf(id) === -1) ordered.push(id); });
+  return ordered.map(function (id) {
+    var pref = byId[id];
+    var visible = pref ? pref.visible !== false : true;
+    if (LOCKED_NAV_IDS.indexOf(id) !== -1) visible = true;
+    return { id: id, visible: visible };
+  });
+}
+function saveNavPrefs() {
+  try { localStorage.setItem(NAV_PREFS_KEY, JSON.stringify(state.navPrefs)); } catch (e) {}
+}
+function navItemById(id) { return NAV_ITEMS.find(function (n) { return n.id === id; }); }
+function visibleNavItems() {
+  return state.navPrefs.filter(function (p) { return p.visible; }).map(function (p) { return navItemById(p.id); });
+}
+
 /* ================= State ================= */
 var state = {
   clients: [], revenus: [], depenses: [], vehicules: [], inventaire: [], settings: DEFAULT_SETTINGS,
   activeView: "dashboard", sidebarCollapsed: false, mobileNavOpen: false,
-  dashboardPeriod: "mois", rentabiliteType: "vehicule", rentabiliteVehiculeId: null, rentabiliteProduitId: null
+  dashboardPeriod: "mois", rentabiliteType: "vehicule", rentabiliteVehiculeId: null, rentabiliteProduitId: null,
+  navPrefs: loadNavPrefs()
 };
 
 async function init() {
@@ -1007,6 +1045,24 @@ function renderDepenses() {
     '<tbody id="depenses-tbody">' + rows + '</tbody></table><p class="no-results" id="depenses-no-results" style="display:none">Aucune dépense ne correspond à la recherche.</p></div>';
 }
 
+function renderNavPrefsSection() {
+  var rows = state.navPrefs.map(function (p, idx) {
+    var item = navItemById(p.id);
+    var locked = LOCKED_NAV_IDS.indexOf(p.id) !== -1;
+    return '<div class="nav-pref-row">' +
+      '<input type="checkbox" data-action="toggle-nav-visible" data-id="' + p.id + '"' + (p.visible ? " checked" : "") + (locked ? " disabled" : "") + ' aria-label="Afficher ' + esc(item.label) + '">' +
+      '<span class="nav-pref-label">' + icon(item.icon, 16) + esc(item.label) + (locked ? ' <span class="nav-pref-locked">(toujours visible)</span>' : "") + '</span>' +
+      '<button class="icon-btn" data-action="move-nav-up" data-id="' + p.id + '" aria-label="Monter"' + (idx === 0 ? " disabled" : "") + '>' + icon("chevronUp", 15) + '</button>' +
+      '<button class="icon-btn" data-action="move-nav-down" data-id="' + p.id + '" aria-label="Descendre"' + (idx === state.navPrefs.length - 1 ? " disabled" : "") + '>' + icon("chevronDown", 15) + '</button>' +
+    '</div>';
+  }).join("");
+  return '<div class="card" style="margin-top:16px;"><p class="card-title" style="margin-bottom:2px;">Personnaliser le menu</p>' +
+    '<p class="demo-note">Activez, désactivez ou réordonnez les onglets du menu (haut/bas). Propre à cet appareil.</p>' +
+    '<div style="margin-top:12px;">' + rows + '</div>' +
+    '<button class="btn btn-ghost" style="margin-top:10px;padding-left:0;" data-action="reset-nav-prefs">' + icon("rotate", 14) + ' Réinitialiser le menu</button>' +
+  '</div>';
+}
+
 function renderParametres() {
   var s = state.settings;
   return (
@@ -1020,6 +1076,7 @@ function renderParametres() {
       '</select></label>' +
       '<button type="submit" class="btn btn-primary">Enregistrer</button>' +
     '</form>' +
+    renderNavPrefsSection() +
     '<div class="card" style="margin-top:16px;"><p class="card-title" style="margin-bottom:2px;">Données de démonstration</p>' +
       '<p class="demo-note">Les données sont partagées : toute personne ayant ce lien voit et modifie les mêmes clients, revenus et dépenses.</p>' +
       '<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">' +
@@ -1031,7 +1088,7 @@ function renderParametres() {
 
 /* ================= Shell render ================= */
 function navHtml(collapsed) {
-  return NAV_ITEMS.map(function (item) {
+  return visibleNavItems().map(function (item) {
     var active = state.activeView === item.id;
     return '<button class="nav-btn' + (active ? " active" : "") + '" data-action="nav" data-view="' + item.id + '" title="' + esc(item.label) + '">' +
       icon(item.icon, 18) + (collapsed ? "" : '<span>' + item.label + '</span>') + '</button>';
@@ -1326,6 +1383,41 @@ document.addEventListener("click", function (e) {
     case "delete-depense": deleteDepense(state.depenses.find(function (d) { return d.id === id; })); break;
     case "reset-demo": resetDemoData(); break;
     case "clear-all": clearAllData(); break;
+    case "toggle-nav-visible": {
+      var navPref = state.navPrefs.find(function (p) { return p.id === id; });
+      if (navPref && LOCKED_NAV_IDS.indexOf(id) === -1) {
+        navPref.visible = !navPref.visible;
+        if (!navPref.visible && state.activeView === id) state.activeView = "dashboard";
+        saveNavPrefs(); render();
+      }
+      break;
+    }
+    case "move-nav-up": {
+      var upIdx = state.navPrefs.findIndex(function (p) { return p.id === id; });
+      if (upIdx > 0) {
+        var upTmp = state.navPrefs[upIdx - 1];
+        state.navPrefs[upIdx - 1] = state.navPrefs[upIdx];
+        state.navPrefs[upIdx] = upTmp;
+        saveNavPrefs(); render();
+      }
+      break;
+    }
+    case "move-nav-down": {
+      var downIdx = state.navPrefs.findIndex(function (p) { return p.id === id; });
+      if (downIdx !== -1 && downIdx < state.navPrefs.length - 1) {
+        var downTmp = state.navPrefs[downIdx + 1];
+        state.navPrefs[downIdx + 1] = state.navPrefs[downIdx];
+        state.navPrefs[downIdx] = downTmp;
+        saveNavPrefs(); render();
+      }
+      break;
+    }
+    case "reset-nav-prefs":
+      try { localStorage.removeItem(NAV_PREFS_KEY); } catch (e) {}
+      state.navPrefs = loadNavPrefs();
+      render();
+      showToast("success", "Menu réinitialisé.");
+      break;
   }
 });
 
