@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Windows.Media;
 using GestionApp.Mvvm;
 
 namespace GestionApp.ViewModels;
@@ -13,9 +14,16 @@ namespace GestionApp.ViewModels;
 /// </summary>
 public class NavNode : ViewModelBase
 {
+    /// <summary>Stable key used for saving/loading per-device nav preferences
+    /// (visibility + order) — mirrors the website's NAV_ITEMS ids.</summary>
+    public string Id { get; }
     public string Title { get; }
     public Func<object>? CreateViewModel { get; }
     public ObservableCollection<NavNode> Children { get; } = new();
+
+    /// <summary>Colored dot shown next to top-level items — purely cosmetic,
+    /// null for children.</summary>
+    public Brush? AccentBrush { get; set; }
 
     private bool _isExpanded = true;
     public bool IsExpanded { get => _isExpanded; set => SetField(ref _isExpanded, value); }
@@ -23,8 +31,12 @@ public class NavNode : ViewModelBase
     private bool _isSelected;
     public bool IsSelected { get => _isSelected; set => SetField(ref _isSelected, value); }
 
-    public NavNode(string title, Func<object>? createViewModel = null)
+    private bool _isVisible = true;
+    public bool IsVisible { get => _isVisible; set => SetField(ref _isVisible, value); }
+
+    public NavNode(string id, string title, Func<object>? createViewModel = null)
     {
+        Id = id;
         Title = title;
         CreateViewModel = createViewModel;
     }

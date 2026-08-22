@@ -12,8 +12,8 @@
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
-                <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
-                <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+                <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Style="{StaticResource OutlineButtonStyle}" Command="{Binding EditCommand}"/>
+                <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Style="{StaticResource DangerButtonStyle}" Command="{Binding DeleteCommand}"/>
             </StackPanel>
             <TextBlock DockPanel.Dock="Left" Text="Recherche (nom, catégorie, notes) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="6" VerticalContentAlignment="Center"/>
@@ -31,10 +31,10 @@
                 <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*"/>
             </DataGrid.Columns>
             <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource BaseDataGridRowStyle}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsLowStock}" Value="True">
-                            <Setter Property="Background" Value="#FDE2E1"/>
+                            <Setter Property="Background" Value="{StaticResource DangerSoftBrush}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

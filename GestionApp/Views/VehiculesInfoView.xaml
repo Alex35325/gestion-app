@@ -6,8 +6,8 @@
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
             <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
-            <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
-            <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+            <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Style="{StaticResource OutlineButtonStyle}" Command="{Binding EditCommand}"/>
+            <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Style="{StaticResource DangerButtonStyle}" Command="{Binding DeleteCommand}"/>
         </StackPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">

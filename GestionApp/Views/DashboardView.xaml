@@ -3,56 +3,93 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="8">
-            <TextBlock Text="{Binding CompanyName}" FontSize="20" FontWeight="Bold" Margin="0,0,0,16"/>
+            <DockPanel Margin="0,0,0,16">
+                <ToggleButton DockPanel.Dock="Right" Content="⚙ Personnaliser" Style="{StaticResource PillToggleButtonStyle}"
+                              IsChecked="{Binding IsCustomizing, Mode=TwoWay}"/>
+                <TextBlock Text="{Binding CompanyName}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+            </DockPanel>
 
-            <!-- KPI cards -->
-            <UniformGrid Rows="1" Margin="0,0,0,16">
-                <Border Background="#EAF3EC" CornerRadius="8" Padding="16" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Revenus" Opacity="0.7" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding TotalRevenusText}" FontSize="20" FontWeight="Bold"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#FBEAEA" CornerRadius="8" Padding="16" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Dépenses" Opacity="0.7" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding TotalDepensesText}" FontSize="20" FontWeight="Bold"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#E9EEF9" CornerRadius="8" Padding="16" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="Profit" Opacity="0.7" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding ProfitText}" FontSize="20" FontWeight="Bold"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#F3F0FA" CornerRadius="8" Padding="16">
-                    <StackPanel>
-                        <TextBlock Text="Clients" Opacity="0.7" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding ClientCount}" FontSize="20" FontWeight="Bold"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
+            <TextBlock Text="Coche ou décoche les cartes à afficher — le résultat est immédiat."
+                       FontSize="12" Opacity="0.65" Margin="0,-10,0,14"
+                       Visibility="{Binding IsCustomizing, Converter={StaticResource BoolToVisibility}}"/>
+
+            <!-- KPI widget cards -->
+            <ItemsControl ItemsSource="{Binding Widgets}" Margin="0,0,0,16">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{Binding Background}" CornerRadius="8" Padding="16" Margin="0,0,10,10" Width="200">
+                            <Border.Visibility>
+                                <MultiBinding Converter="{StaticResource AnyTrueToVisibility}">
+                                    <Binding Path="IsVisible"/>
+                                    <Binding Path="DataContext.IsCustomizing" RelativeSource="{RelativeSource AncestorType=ItemsControl}"/>
+                                </MultiBinding>
+                            </Border.Visibility>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <TextBlock Text="{Binding Title}" Opacity="0.7" TextWrapping="Wrap"/>
+                                    <CheckBox HorizontalAlignment="Right" VerticalAlignment="Top" IsChecked="{Binding IsVisible}"
+                                              Visibility="{Binding DataContext.IsCustomizing, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}"/>
+                                </Grid>
+                                <TextBlock Text="{Binding ValueText}" FontSize="20" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
             <!-- Alerts -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                <Border Background="#FDE2E1" CornerRadius="10" Padding="10,5" Margin="0,0,8,0"
+                <Border Background="{StaticResource DangerSoftBrush}" CornerRadius="10" Padding="10,5" Margin="0,0,8,0"
                         Visibility="{Binding MaintenanceLateCount, Converter={StaticResource CountToVisibility}}">
-                    <TextBlock Text="{Binding MaintenanceLateCount, StringFormat='{}{0} entretien(s) en retard'}" Foreground="#8A2A24" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding MaintenanceLateCount, StringFormat='{}{0} entretien(s) en retard'}" Foreground="{StaticResource DangerSoftTextBrush}" FontWeight="SemiBold"/>
                 </Border>
-                <Border Background="#FDF0D5" CornerRadius="10" Padding="10,5" Margin="0,0,8,0"
+                <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="10" Padding="10,5" Margin="0,0,8,0"
                         Visibility="{Binding MaintenanceSoonCount, Converter={StaticResource CountToVisibility}}">
-                    <TextBlock Text="{Binding MaintenanceSoonCount, StringFormat='{}{0} entretien(s) à surveiller'}" Foreground="#7A5A10" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding MaintenanceSoonCount, StringFormat='{}{0} entretien(s) à surveiller'}" Foreground="{StaticResource WarningSoftTextBrush}" FontWeight="SemiBold"/>
                 </Border>
-                <Border Background="#FDE2E1" CornerRadius="10" Padding="10,5"
+                <Border Background="{StaticResource DangerSoftBrush}" CornerRadius="10" Padding="10,5"
                         Visibility="{Binding LowStockItems.Count, Converter={StaticResource CountToVisibility}}">
-                    <TextBlock Text="{Binding LowStockItems.Count, StringFormat='{}{0} article(s) en stock bas'}" Foreground="#8A2A24" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding LowStockItems.Count, StringFormat='{}{0} article(s) en stock bas'}" Foreground="{StaticResource DangerSoftTextBrush}" FontWeight="SemiBold"/>
                 </Border>
             </StackPanel>
 
             <!-- Recent activity -->
-            <TextBlock Text="Activité récente" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+            <DockPanel Margin="0,0,0,8">
+                <CheckBox DockPanel.Dock="Right" Content="Afficher" IsChecked="{Binding ShowActivity}" VerticalAlignment="Center"
+                          Visibility="{Binding IsCustomizing, Converter={StaticResource BoolToVisibility}}"/>
+                <TextBlock Text="Activité récente" FontSize="16" FontWeight="Bold"/>
+            </DockPanel>
             <DataGrid ItemsSource="{Binding RecentActivity}" AutoGenerateColumns="False" IsReadOnly="True"
                       SelectionMode="Single" SelectionUnit="FullRow" MaxHeight="280">
+                <DataGrid.Visibility>
+                    <MultiBinding Converter="{StaticResource AnyTrueToVisibility}">
+                        <Binding Path="ShowActivity"/>
+                        <Binding Path="IsCustomizing"/>
+                    </MultiBinding>
+                </DataGrid.Visibility>
+                <DataGrid.Style>
+                    <Style TargetType="DataGrid">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowActivity}" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Style>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="Auto"/>
                     <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="Auto"/>

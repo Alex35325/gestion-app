@@ -30,7 +30,7 @@
                  TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
 
         <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Annuler" Width="90" Padding="6" Margin="0,0,8,0" Click="Cancel_Click"/>
+            <Button Content="Annuler" Width="90" Padding="6" Margin="0,0,8,0" Style="{StaticResource OutlineButtonStyle}" Click="Cancel_Click"/>
             <Button Content="Enregistrer" Width="110" Padding="6" IsDefault="True" Click="Save_Click"/>
         </StackPanel>
     </Grid>
