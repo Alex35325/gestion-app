@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace GestionApp.Models;
 
-public class Depense
+public class Depense : ITransaction
 {
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("date")] public string Date { get; set; } = "";
@@ -16,4 +16,8 @@ public class Depense
     [JsonPropertyName("updated_at")] public long UpdatedAt { get; set; }
 
     [JsonIgnore] public string ClientName { get; set; } = "";
+    [JsonIgnore] public string VehiculeName { get; set; } = "";
+    [JsonIgnore] public string ProduitName { get; set; } = "";
+
+    public static readonly string[] Categories = { "Loyer", "Fournitures", "Salaires", "Marketing", "Logiciels", "Autre" };
 }

@@ -2,7 +2,7 @@ using System.Windows;
 using GestionApp.Models;
 using GestionApp.Services;
 
-namespace GestionApp;
+namespace GestionApp.Dialogs;
 
 public partial class ClientDialog : Window
 {

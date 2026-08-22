@@ -1,45 +1,55 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Windows;
 using GestionApp.Models;
 using GestionApp.Services;
+using System.Windows;
 
-namespace GestionApp;
+namespace GestionApp.Dialogs;
 
-public partial class DepenseDialog : Window
+public partial class RevenuDialog : Window
 {
-    private static readonly string[] Categories = { "Loyer", "Fournitures", "Salaires", "Marketing", "Logiciels", "Autre" };
+    private readonly Revenu? _editing;
 
-    private readonly Depense? _editing;
+    public Revenu Result { get; private set; } = new();
 
-    public Depense Result { get; private set; } = new();
-
-    public DepenseDialog(List<Client> clients, Depense? editing = null)
+    public RevenuDialog(List<Client> clients, List<Vehicule> vehicules, List<InventaireItem> produits, Revenu? editing = null)
     {
         InitializeComponent();
         _editing = editing;
 
-        CategorieCombo.ItemsSource = Categories;
+        CategorieCombo.ItemsSource = Revenu.Categories;
 
         var clientChoices = new List<Client> { new() { Id = "", Name = "Aucun client" } };
         clientChoices.AddRange(clients);
         ClientCombo.ItemsSource = clientChoices;
 
+        var vehiculeChoices = new List<Vehicule> { new() { Id = "", Name = "Aucun véhicule" } };
+        vehiculeChoices.AddRange(vehicules);
+        VehiculeCombo.ItemsSource = vehiculeChoices;
+
+        var produitChoices = new List<InventaireItem> { new() { Id = "", Name = "Aucun produit" } };
+        produitChoices.AddRange(produits);
+        ProduitCombo.ItemsSource = produitChoices;
+
         if (editing != null)
         {
-            Title = "Modifier la dépense";
+            Title = "Modifier le revenu";
             DatePickerBox.SelectedDate = DateTime.TryParse(editing.Date, out var d) ? d : DateTime.Now;
             ClientCombo.SelectedValue = editing.ClientId ?? "";
+            VehiculeCombo.SelectedValue = editing.VehiculeId ?? "";
+            ProduitCombo.SelectedValue = editing.ProduitId ?? "";
             MontantBox.Text = editing.Montant.ToString(CultureInfo.InvariantCulture);
             CategorieCombo.SelectedItem = editing.Categorie;
             DescriptionBox.Text = editing.Description;
         }
         else
         {
-            Title = "Ajouter une dépense";
+            Title = "Ajouter un revenu";
             DatePickerBox.SelectedDate = DateTime.Now;
             ClientCombo.SelectedIndex = 0;
+            VehiculeCombo.SelectedIndex = 0;
+            ProduitCombo.SelectedIndex = 0;
             CategorieCombo.SelectedIndex = 0;
         }
     }
@@ -59,16 +69,18 @@ public partial class DepenseDialog : Window
         }
 
         var clientId = ClientCombo.SelectedValue as string;
+        var vehiculeId = VehiculeCombo.SelectedValue as string;
+        var produitId = ProduitCombo.SelectedValue as string;
         var now = Ids.NowMs();
-        Result = new Depense
+        Result = new Revenu
         {
             Id = _editing?.Id ?? Ids.NewId(),
             Date = DatePickerBox.SelectedDate.Value.ToString("yyyy-MM-dd"),
             ClientId = string.IsNullOrEmpty(clientId) ? null : clientId,
-            VehiculeId = _editing?.VehiculeId,
-            ProduitId = _editing?.ProduitId,
+            VehiculeId = string.IsNullOrEmpty(vehiculeId) ? null : vehiculeId,
+            ProduitId = string.IsNullOrEmpty(produitId) ? null : produitId,
             Montant = montant,
-            Categorie = CategorieCombo.SelectedItem as string ?? Categories[0],
+            Categorie = CategorieCombo.SelectedItem as string ?? Revenu.Categories[0],
             Description = DescriptionBox.Text.Trim(),
             CreatedAt = _editing?.CreatedAt ?? now,
             UpdatedAt = now

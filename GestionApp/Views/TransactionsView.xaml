@@ -1,0 +1,36 @@
+<UserControl x:Class="GestionApp.Views.TransactionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
+                <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
+                <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Left" Text="Recherche :" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="6" VerticalContentAlignment="Center"/>
+        </DockPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding TotalText}" Margin="0,8,0,0" FontWeight="SemiBold"/>
+
+        <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionMode="Single" SelectionUnit="FullRow">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="Auto"/>
+                <DataGridTextColumn Header="Client" Binding="{Binding ClientName}" Width="1.5*"/>
+                <DataGridTextColumn Header="Véhicule" Binding="{Binding VehiculeName}" Width="1.2*"/>
+                <DataGridTextColumn Header="Produit" Binding="{Binding ProduitName}" Width="1.2*"/>
+                <DataGridTextColumn Header="Catégorie" Binding="{Binding Categorie}" Width="1.2*"/>
+                <DataGridTextColumn Header="Montant" Binding="{Binding Montant, StringFormat={}{0:C}, ConverterCulture=fr-CA}" Width="Auto"/>
+                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

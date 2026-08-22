@@ -3,107 +3,47 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:GestionApp"
+        xmlns:vm="clr-namespace:GestionApp.ViewModels"
         mc:Ignorable="d"
-        Title="Gestion App" Height="650" Width="1000" MinWidth="760" MinHeight="480">
+        Title="Gestion App" Height="700" Width="1100" MinWidth="820" MinHeight="520">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="#1f2937" Padding="20,14">
             <DockPanel>
                 <TextBlock Text="Gestion App" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                <Button DockPanel.Dock="Right" Content="Actualiser" Padding="12,6" Click="Refresh_Click" HorizontalAlignment="Right"/>
+                <Button DockPanel.Dock="Right" Content="Actualiser" Padding="12,6" Command="{Binding RefreshCommand}" HorizontalAlignment="Right"/>
             </DockPanel>
         </Border>
 
         <StatusBar DockPanel.Dock="Bottom">
             <StatusBarItem>
-                <TextBlock x:Name="StatusText" Text="Prêt"/>
+                <TextBlock Text="{Binding StatusText}"/>
             </StatusBarItem>
         </StatusBar>
 
-        <TabControl x:Name="MainTabs" Margin="12">
+        <Border DockPanel.Dock="Left" Width="220" Background="#F5F5F5" BorderBrush="#DDDDDD" BorderThickness="0,0,1,0">
+            <TreeView x:Name="NavTree" ItemsSource="{Binding NavItems}" BorderThickness="0" Background="Transparent"
+                      SelectedItemChanged="NavTree_SelectedItemChanged">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                        <Setter Property="Padding" Value="6,6"/>
+                        <Setter Property="FontSize" Value="14"/>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                        <TextBlock Text="{Binding Title}"/>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+        </Border>
 
-            <!-- ===================== Clients ===================== -->
-            <TabItem Header="Clients">
-                <DockPanel Margin="8">
-                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Click="AddClient_Click"/>
-                            <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Click="EditClient_Click"/>
-                            <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Click="DeleteClient_Click"/>
-                        </StackPanel>
-                        <TextBlock DockPanel.Dock="Left" Text="Recherche (nom, courriel, téléphone) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox x:Name="ClientSearchBox" Padding="6" TextChanged="ClientSearchBox_TextChanged"
-                                 VerticalContentAlignment="Center"/>
-                    </DockPanel>
-                    <DataGrid x:Name="ClientsGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                              SelectionMode="Single" SelectionUnit="FullRow"
-                              MouseDoubleClick="ClientsGrid_MouseDoubleClick">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTextColumn Header="Courriel" Binding="{Binding Email}" Width="2*"/>
-                            <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" Width="1.5*"/>
-                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <!-- ===================== Revenus ===================== -->
-            <TabItem Header="Revenus">
-                <DockPanel Margin="8">
-                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Click="AddRevenu_Click"/>
-                            <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Click="EditRevenu_Click"/>
-                            <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Click="DeleteRevenu_Click"/>
-                        </StackPanel>
-                        <TextBlock DockPanel.Dock="Left" Text="Recherche (client, catégorie, description) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox x:Name="RevenuSearchBox" Padding="6" TextChanged="RevenuSearchBox_TextChanged"
-                                 VerticalContentAlignment="Center"/>
-                    </DockPanel>
-                    <TextBlock x:Name="RevenuTotalText" DockPanel.Dock="Bottom" Margin="0,8,0,0" FontWeight="SemiBold"/>
-                    <DataGrid x:Name="RevenusGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                              SelectionMode="Single" SelectionUnit="FullRow"
-                              MouseDoubleClick="RevenusGrid_MouseDoubleClick">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="Auto"/>
-                            <DataGridTextColumn Header="Client" Binding="{Binding ClientName}" Width="2*"/>
-                            <DataGridTextColumn Header="Catégorie" Binding="{Binding Categorie}" Width="1.2*"/>
-                            <DataGridTextColumn Header="Montant" Binding="{Binding Montant, StringFormat={}{0:C}, ConverterCulture=fr-CA}" Width="Auto"/>
-                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <!-- ===================== Dépenses ===================== -->
-            <TabItem Header="Dépenses">
-                <DockPanel Margin="8">
-                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Click="AddDepense_Click"/>
-                            <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Click="EditDepense_Click"/>
-                            <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Click="DeleteDepense_Click"/>
-                        </StackPanel>
-                        <TextBlock DockPanel.Dock="Left" Text="Recherche (client, catégorie, description) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox x:Name="DepenseSearchBox" Padding="6" TextChanged="DepenseSearchBox_TextChanged"
-                                 VerticalContentAlignment="Center"/>
-                    </DockPanel>
-                    <TextBlock x:Name="DepenseTotalText" DockPanel.Dock="Bottom" Margin="0,8,0,0" FontWeight="SemiBold"/>
-                    <DataGrid x:Name="DepensesGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                              SelectionMode="Single" SelectionUnit="FullRow"
-                              MouseDoubleClick="DepensesGrid_MouseDoubleClick">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="Auto"/>
-                            <DataGridTextColumn Header="Client" Binding="{Binding ClientName}" Width="2*"/>
-                            <DataGridTextColumn Header="Catégorie" Binding="{Binding Categorie}" Width="1.2*"/>
-                            <DataGridTextColumn Header="Montant" Binding="{Binding Montant, StringFormat={}{0:C}, ConverterCulture=fr-CA}" Width="Auto"/>
-                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="3*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-        </TabControl>
+        <ContentControl Content="{Binding CurrentViewModel}" Margin="12"/>
     </DockPanel>
 </Window>

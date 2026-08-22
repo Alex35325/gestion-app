@@ -1,0 +1,41 @@
+<UserControl x:Class="GestionApp.Views.MaintenanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Maintenance" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <Border Background="#FDE2E1" CornerRadius="10" Padding="10,5" Margin="0,0,8,0">
+                <TextBlock Text="{Binding LateCount, StringFormat='{}{0} en retard'}" Foreground="#8A2A24" FontWeight="SemiBold"/>
+            </Border>
+            <Border Background="#FDF0D5" CornerRadius="10" Padding="10,5" Margin="0,0,8,0">
+                <TextBlock Text="{Binding SoonCount, StringFormat='{}{0} à surveiller'}" Foreground="#7A5A10" FontWeight="SemiBold"/>
+            </Border>
+            <Border Background="#E1F0E5" CornerRadius="10" Padding="10,5">
+                <TextBlock Text="{Binding OkCount, StringFormat='{}{0} à jour'}" Foreground="#1F6B37" FontWeight="SemiBold"/>
+            </Border>
+        </StackPanel>
+
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
+                <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
+                <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Left" Text="Recherche (véhicule, type, notes) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="6" VerticalContentAlignment="Center"/>
+        </DockPanel>
+
+        <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionMode="Single" SelectionUnit="FullRow">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Véhicule" Binding="{Binding VehiculeName}" Width="1.5*"/>
+                <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="1.5*"/>
+                <DataGridTextColumn Header="Date effectuée" Binding="{Binding Date}" Width="Auto"/>
+                <DataGridTextColumn Header="Prochaine échéance" Binding="{Binding NextDueDate}" Width="Auto"/>
+                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

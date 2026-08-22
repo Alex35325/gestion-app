@@ -1,0 +1,60 @@
+<Window x:Class="GestionApp.Dialogs.VehiculeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Véhicule" Height="640" Width="460"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Annuler" Width="90" Padding="6" Margin="0,0,8,0" Click="Cancel_Click"/>
+            <Button Content="Enregistrer" Width="110" Padding="6" IsDefault="True" Click="Save_Click"/>
+        </StackPanel>
+
+        <StackPanel>
+            <TextBlock Text="Nom / dossier *" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox x:Name="NameBox" Margin="0,0,0,12" Padding="6"/>
+
+            <TextBlock Text="Marque, modèle, année" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="MakeBox" Grid.Column="0" Padding="6"/>
+                <TextBox x:Name="ModelBox" Grid.Column="2" Padding="6"/>
+                <TextBox x:Name="YearBox" Grid.Column="4" Padding="6"/>
+            </Grid>
+
+            <TextBlock Text="Plaque, VIN" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="PlateBox" Grid.Column="0" Padding="6"/>
+                <TextBox x:Name="VinBox" Grid.Column="2" Padding="6"/>
+            </Grid>
+
+            <TextBlock Text="Couleur, kilométrage" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="ColorBox" Grid.Column="0" Padding="6"/>
+                <TextBox x:Name="MileageBox" Grid.Column="2" Padding="6"/>
+            </Grid>
+
+            <TextBlock Text="Date d'achat" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <DatePicker x:Name="PurchaseDateBox" Padding="6" HorizontalAlignment="Left" Width="200" Margin="0,0,0,12"/>
+
+            <TextBlock Text="Notes" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox x:Name="NotesBox" Padding="6" Height="70"
+                     TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+        </StackPanel>
+    </DockPanel>
+</Window>

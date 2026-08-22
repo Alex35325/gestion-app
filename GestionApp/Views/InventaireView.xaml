@@ -1,0 +1,44 @@
+<UserControl x:Class="GestionApp.Views.InventaireView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Inventaire" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <Border DockPanel.Dock="Top" Background="#FDE2E1" CornerRadius="10" Padding="10,5" Margin="0,0,0,8"
+                HorizontalAlignment="Left" Visibility="{Binding LowStockCount, Converter={StaticResource CountToVisibility}}">
+            <TextBlock Text="{Binding LowStockCount, StringFormat='{}{0} article(s) en stock bas'}" Foreground="#8A2A24" FontWeight="SemiBold"/>
+        </Border>
+
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
+                <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
+                <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Left" Text="Recherche (nom, catégorie, notes) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="6" VerticalContentAlignment="Center"/>
+        </DockPanel>
+
+        <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionMode="Single" SelectionUnit="FullRow">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Quantité" Binding="{Binding Quantity}" Width="Auto"/>
+                <DataGridTextColumn Header="Unité" Binding="{Binding Unit}" Width="Auto"/>
+                <DataGridTextColumn Header="Catégorie" Binding="{Binding Category}" Width="1.2*"/>
+                <DataGridTextColumn Header="Seuil d'alerte" Binding="{Binding MinThreshold}" Width="Auto"/>
+                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*"/>
+            </DataGrid.Columns>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsLowStock}" Value="True">
+                            <Setter Property="Background" Value="#FDE2E1"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,28 @@
+<UserControl x:Class="GestionApp.Views.ClientsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Clients" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
+                <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
+                <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Left" Text="Recherche (nom, courriel, téléphone) :" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="6" VerticalContentAlignment="Center"/>
+        </DockPanel>
+
+        <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionMode="Single" SelectionUnit="FullRow">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Courriel" Binding="{Binding Email}" Width="2*"/>
+                <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" Width="1.5*"/>
+                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,82 @@
+<UserControl x:Class="GestionApp.Views.VehiculesInfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="8">
+        <TextBlock DockPanel.Dock="Top" Text="Info véhicule" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+            <Button Content="Ajouter" Padding="10,6" Margin="6,0,0,0" Command="{Binding AddCommand}"/>
+            <Button Content="Modifier" Padding="10,6" Margin="6,0,0,0" Command="{Binding EditCommand}"/>
+            <Button Content="Supprimer" Padding="10,6" Margin="6,0,0,0" Command="{Binding DeleteCommand}"/>
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Cards}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="6" Margin="0,0,12,12" Padding="14" Width="280"
+                                Background="#FAFAFA"
+                                MouseLeftButtonUp="Card_Click" Tag="{Binding}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Vehicule.Name}" FontSize="16" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <TextBlock Margin="0,0,0,10">
+                                    <Run Text="{Binding Vehicule.Make}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding Vehicule.Model}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding Vehicule.Year}"/>
+                                </TextBlock>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Plaque :" Opacity="0.7" Margin="0,0,6,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Vehicule.Plate}" Margin="0,0,0,3"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="VIN :" Opacity="0.7" Margin="0,0,6,3"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Vehicule.Vin}" Margin="0,0,0,3" TextTrimming="CharacterEllipsis"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Couleur :" Opacity="0.7" Margin="0,0,6,3"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Vehicule.Color}" Margin="0,0,0,3"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Km :" Opacity="0.7" Margin="0,0,6,3"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Vehicule.Mileage}" Margin="0,0,0,3"/>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Achat :" Opacity="0.7" Margin="0,0,6,0"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Vehicule.PurchaseDate}" Margin="0,0,0,0"/>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Border Background="#FDE2E1" CornerRadius="10" Padding="8,3" Margin="0,0,6,0">
+                                        <TextBlock Text="{Binding LateCount, StringFormat='{}{0} en retard'}" FontSize="11" Foreground="#8A2A24"/>
+                                    </Border>
+                                    <Border Background="#FDF0D5" CornerRadius="10" Padding="8,3" Margin="0,0,6,0">
+                                        <TextBlock Text="{Binding SoonCount, StringFormat='{}{0} à surveiller'}" FontSize="11" Foreground="#7A5A10"/>
+                                    </Border>
+                                    <Border Background="#E1F0E5" CornerRadius="10" Padding="8,3">
+                                        <TextBlock Text="{Binding OkCount, StringFormat='{}{0} à jour'}" FontSize="11" Foreground="#1F6B37"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

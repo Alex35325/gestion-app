@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace GestionApp.Models;
 
-public class Client
+public class Client : IEntity
 {
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("name")] public string Name { get; set; } = "";

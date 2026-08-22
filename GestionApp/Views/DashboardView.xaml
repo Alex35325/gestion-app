@@ -1,0 +1,66 @@
+<UserControl x:Class="GestionApp.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="8">
+            <TextBlock Text="{Binding CompanyName}" FontSize="20" FontWeight="Bold" Margin="0,0,0,16"/>
+
+            <!-- KPI cards -->
+            <UniformGrid Rows="1" Margin="0,0,0,16">
+                <Border Background="#EAF3EC" CornerRadius="8" Padding="16" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Revenus" Opacity="0.7" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding TotalRevenusText}" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#FBEAEA" CornerRadius="8" Padding="16" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Dépenses" Opacity="0.7" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding TotalDepensesText}" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#E9EEF9" CornerRadius="8" Padding="16" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="Profit" Opacity="0.7" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding ProfitText}" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#F3F0FA" CornerRadius="8" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Clients" Opacity="0.7" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding ClientCount}" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Alerts -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <Border Background="#FDE2E1" CornerRadius="10" Padding="10,5" Margin="0,0,8,0"
+                        Visibility="{Binding MaintenanceLateCount, Converter={StaticResource CountToVisibility}}">
+                    <TextBlock Text="{Binding MaintenanceLateCount, StringFormat='{}{0} entretien(s) en retard'}" Foreground="#8A2A24" FontWeight="SemiBold"/>
+                </Border>
+                <Border Background="#FDF0D5" CornerRadius="10" Padding="10,5" Margin="0,0,8,0"
+                        Visibility="{Binding MaintenanceSoonCount, Converter={StaticResource CountToVisibility}}">
+                    <TextBlock Text="{Binding MaintenanceSoonCount, StringFormat='{}{0} entretien(s) à surveiller'}" Foreground="#7A5A10" FontWeight="SemiBold"/>
+                </Border>
+                <Border Background="#FDE2E1" CornerRadius="10" Padding="10,5"
+                        Visibility="{Binding LowStockItems.Count, Converter={StaticResource CountToVisibility}}">
+                    <TextBlock Text="{Binding LowStockItems.Count, StringFormat='{}{0} article(s) en stock bas'}" Foreground="#8A2A24" FontWeight="SemiBold"/>
+                </Border>
+            </StackPanel>
+
+            <!-- Recent activity -->
+            <TextBlock Text="Activité récente" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+            <DataGrid ItemsSource="{Binding RecentActivity}" AutoGenerateColumns="False" IsReadOnly="True"
+                      SelectionMode="Single" SelectionUnit="FullRow" MaxHeight="280">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="Auto"/>
+                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="Auto"/>
+                    <DataGridTextColumn Header="Catégorie" Binding="{Binding Categorie}" Width="1.2*"/>
+                    <DataGridTextColumn Header="Montant" Binding="{Binding Montant, StringFormat={}{0:C}, ConverterCulture=fr-CA}" Width="Auto"/>
+                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
